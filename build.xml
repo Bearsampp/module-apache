@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="module-apache" basedir=".">
-  
+
   <dirname property="project.basedir" file="${ant.file.module-apache}"/>
   <property name="root.dir" location="${project.basedir}/.."/>
   <property name="build.properties" value="${project.basedir}/build.properties"/>
   <property file="${build.properties}"/>
-  
+
   <!-- Neard dev -->
   <property name="dev.path" location="${root.dir}/dev"/>
   <fail unless="dev.path" message="Project 'dev' not found in ${dev.path}"/>
-  <echo message="Neard dev found in ${dev.path}" level="debug"/> 
-  
+  <echo message="Neard dev found in ${dev.path}" level="debug"/>
+
   <!-- Import build-commons.xml -->
   <import file="${dev.path}/build/build-commons.xml"/>
   <!-- Import build-bundle.xml -->
   <import file="${dev.path}/build/build-bundle.xml"/>
-  
+
   <target name="release.build">
     <basename property="bundle.folder" file="${bundle.path}"/>
     <replaceproperty src="bundle.folder" dest="bundle.version" replace="${bundle.name}" with=""/>
-    
+
     <getmoduleuntouched name="${bundle.name}" version="${bundle.version}" propSrcDest="bundle.srcdest" propSrcFilename="bundle.srcfilename"/>
     <condition property="bundle.srcfinal" value="${bundle.srcdest}/Apache22"><available file="${bundle.srcdest}/Apache22" type="dir"/></condition>
     <condition property="bundle.srcfinal" value="${bundle.srcdest}/Apache2.2"><available file="${bundle.srcdest}/Apache2.2" type="dir"/></condition>
@@ -27,7 +27,7 @@
     <condition property="bundle.srcfinal" value="${bundle.srcdest}/Apache2.4"><available file="${bundle.srcdest}/Apache2.4" type="dir"/></condition>
     <fail unless="bundle.srcfinal" message="Main folder not found"/>
     <assertfile file="${bundle.srcfinal}/bin/httpd.exe"/>
-    
+
     <property name="apache.prep.path" location="${bundle.tmp.prep.path}/${bundle.name}${bundle.version}"/>
     <delete dir="${apache.prep.path}"/>
     <mkdir dir="${apache.prep.path}"/>
@@ -53,7 +53,7 @@
     <copy todir="${apache.prep.path}" overwrite="true">
       <fileset dir="${bundle.path}" defaultexcludes="yes"/>
     </copy>
-    
+
     <!-- Modules -->
     <if>
       <available file="${apache.prep.path}/modules.properties" type="file"/>
@@ -69,7 +69,7 @@
             <var name="apachemodule.dest" unset="true"/>
             <var name="apachemodule.so" unset="true"/>
             <propertyregex property="apachemodule.version" input="${apachemodules.@{apachemodule}}" regexp="apache-.*-.*-(.*)-win32" select="\1"/>
-            
+
             <!-- Download module -->
             <download url="${apachemodules.@{apachemodule}}" returnProperty="apachemodule.dest"/>
             <echo message="Module path: ${apachemodule.dest}"/>
@@ -79,19 +79,22 @@
             <condition property="apachemodule.so" value="${apachemodule.dest}/Apache24/modules/mod_@{apachemodule}.so">
               <available file="${apachemodule.dest}/Apache24/modules/mod_@{apachemodule}.so" type="file"/>
             </condition>
+            <condition property="apachemodule.so" value="${apachemodule.dest}/Apache24/modules/mod_@{apachemodule}.so">
+              <available file="${apachemodule.dest}/mod_@{apachemodule}.so" type="file"/>
+            </condition>
             <fail unless="apachemodule.so" message="Main so not found"/>
-            
+
             <!-- Copy module -->
             <echo message="Copy @{apachemodule} ${apachemodule.version} module..."/>
             <copy file="${apachemodule.so}" todir="${apache.prep.path}/modules" overwrite="true"/>
-            
+
             <!-- Echo module string to temp file -->
             <echo message="#LoadModule @{apachemodule}_module modules/mod_@{apachemodule}.so${line.separator}"
               file="${build.tmp.path}/apache_modules.tmp"
               append="true"/>
           </sequential>
         </for>
-        
+
         <!-- Inject in httpd.conf -->
         <loadfile property="apache.modules" srcFile="${build.tmp.path}/apache_modules.tmp"/>
         <echo message="${line.separator}Apache modules to inject in httpd.conf :${line.separator}${apache.modules}"/>
@@ -104,7 +107,7 @@
             <file file="${bundle.path}/conf/httpd.conf.nrd"/>
           </resources>
         </copy>
-        
+
         <delete file="${apache.prep.path}/modules.properties"/>
       </then>
     </if>

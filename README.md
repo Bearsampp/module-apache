@@ -1,12 +1,12 @@
-[![GitHub release](https://img.shields.io/github/release/neard/module-apache.svg?style=flat-square)](https://github.com/neard/module-apache/releases/latest)
-![Total downloads](https://img.shields.io/github/downloads/neard/module-apache/total.svg?style=flat-square)
+[![GitHub release](https://img.shields.io/github/release/bearsampp/module-apache.svg?style=flat-square)](https://github.com/bearsampp/module-apache/releases/latest)
+![Total downloads](https://img.shields.io/github/downloads/bearsampp/module-apache/total.svg?style=flat-square)
 
-This is a module of [Neard project](https://github.com/neard/neard) involving Apache.
+This is a module of [Bearsampp project](https://github.com/bearsampp/bearsampp) involving Apache.
 
 ## Documentation and downloads
 
-https://neard.io/modules/apache
+https://bearsampp.github.io/modules/apache
 
 ## Issues
 
-Issues must be reported on [Neard repository](https://github.com/neard/neard/issues).
+Issues must be reported on [Bearsampp repository](https://github.com/bearsampp/bearsampp/issues).
