@@ -1,7 +1,8 @@
 # Jetbrains
 /*.iml
+/.idea
 
-# Neard
+# Bearsampp
 /.dev
 /.idea/.gitignore
 /.idea/git_toolbox_prj.xml
@@ -10,3 +11,9 @@
 /.idea/php.xml
 /.idea/vcs.xml
 /.idea/deployment.xml
+
+# VSC
+/.VSC
+/.VS
+.VS
+.VSC
