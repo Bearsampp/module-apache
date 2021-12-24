@@ -35,8 +35,8 @@
 # least PidFile.
 #
 
-Define NEARD_LIN_PATH "~NEARD_LIN_PATH~"
-Define SRVROOT "${NEARD_LIN_PATH}/bin/apache/apache2.4.41"
+Define BEARSAMPP_LIN_PATH "~BEARSAMPP_LIN_PATH~"
+Define SRVROOT "${BEARSAMPP_LIN_PATH}/bin/apache/apache2.4.41"
 ServerRoot "${SRVROOT}"
 
 #
@@ -184,9 +184,9 @@ LoadModule status_module modules/mod_status.so
 #LoadModule xml2enc_module modules/mod_xml2enc.so
 @APACHE_MODULES@
 
-PHPIniDir "${NEARD_LIN_PATH}/bin/php/php5.3.13"
-LoadFile "${NEARD_LIN_PATH}/bin/php/php5.3.13/php5ts.dll"
-LoadModule php5_module "${NEARD_LIN_PATH}/bin/php/php5.3.13/php5apache2_4.dll"
+PHPIniDir "${BEARSAMPP_LIN_PATH}/bin/php/php5.3.13"
+LoadFile "${BEARSAMPP_LIN_PATH}/bin/php/php5.3.13/php5ts.dll"
+LoadModule php5_module "${BEARSAMPP_LIN_PATH}/bin/php/php5.3.13/php5apache2_4.dll"
 
 <IfModule unixd_module>
 #
@@ -252,8 +252,8 @@ ServerName localhost:80
 # documents. By default, all requests are taken from this directory, but
 # symbolic links and aliases may be used to point to other locations.
 #
-DocumentRoot "${NEARD_LIN_PATH}/www"
-<Directory "${NEARD_LIN_PATH}/www">
+DocumentRoot "${BEARSAMPP_LIN_PATH}/www"
+<Directory "${BEARSAMPP_LIN_PATH}/www">
     #
     # Possible values for the Options directive are "None", "All",
     # or any combination of:
@@ -309,7 +309,7 @@ DocumentRoot "${NEARD_LIN_PATH}/www"
 # container, that host's errors will be logged there and not here.
 #
 #ErrorLog "logs/error.log"
-ErrorLog "${NEARD_LIN_PATH}/logs/apache_error.log"
+ErrorLog "${BEARSAMPP_LIN_PATH}/logs/apache_error.log"
 
 #
 # LogLevel: Control the number of messages logged to the error_log.
@@ -338,7 +338,7 @@ LogLevel warn
     # define per-<VirtualHost> access logfiles, transactions will be
     # logged therein and *not* in this file.
     #
-    CustomLog "${NEARD_LIN_PATH}/logs/apache_access.log" combined
+    CustomLog "${BEARSAMPP_LIN_PATH}/logs/apache_access.log" combined
 
     #
     # If you prefer a logfile with access, agent, and referer information
@@ -374,7 +374,7 @@ LogLevel warn
     # client.  The same rules about trailing "/" apply to ScriptAlias
     # directives as to Alias.
     #
-    Alias /cgi-bin "${NEARD_LIN_PATH}/cgi-bin/"
+    Alias /cgi-bin "${BEARSAMPP_LIN_PATH}/cgi-bin/"
 
 </IfModule>
 
@@ -390,7 +390,7 @@ LogLevel warn
 # "${SRVROOT}/cgi-bin" should be changed to whatever your ScriptAliased
 # CGI directory exists, if you have that configured.
 #
-<Directory "${NEARD_LIN_PATH}/cgi-bin">
+<Directory "${BEARSAMPP_LIN_PATH}/cgi-bin">
     AddHandler cgi-script .cgi .exe .pl .py .vbs
     Options Indexes FollowSymLinks ExecCGI
     AllowOverride None
@@ -551,7 +551,7 @@ SSLRandomSeed connect builtin
 </IfModule>
 
 # Homepage alias
-Include "${NEARD_LIN_PATH}/core/resources/homepage/alias.conf"
+Include "${BEARSAMPP_LIN_PATH}/core/resources/homepage/alias.conf"
 
 # Mod rewrite logs
 <IfModule mod_rewrite>
@@ -560,10 +560,10 @@ LogLevel mod_rewrite.c:trace3
 
 # VHosts
 <VirtualHost *:80>
-    DocumentRoot "${NEARD_LIN_PATH}/www/"
+    DocumentRoot "${BEARSAMPP_LIN_PATH}/www/"
     ServerName localhost
 </VirtualHost>
-IncludeOptional "${NEARD_LIN_PATH}/vhosts/*.conf"
+IncludeOptional "${BEARSAMPP_LIN_PATH}/vhosts/*.conf"
 
 # Aliases
-IncludeOptional "${NEARD_LIN_PATH}/alias/*.conf"
+IncludeOptional "${BEARSAMPP_LIN_PATH}/alias/*.conf"

@@ -52,8 +52,8 @@ SSLPassPhraseDialog  builtin
 #   Inter-Process Session Cache:
 #   Configure the SSL Session Cache: First the mechanism 
 #   to use and second the expiring timeout (in seconds).
-#SSLSessionCache         "dbm:${NEARD_LIN_PATH}/logs/ssl_scache"
-SSLSessionCache        "shmcb:${NEARD_LIN_PATH}/logs/ssl_scache(512000)"
+#SSLSessionCache         "dbm:${BEARSAMPP_LIN_PATH}/logs/ssl_scache"
+SSLSessionCache        "shmcb:${BEARSAMPP_LIN_PATH}/logs/ssl_scache(512000)"
 SSLSessionCacheTimeout  300
 
 ##
@@ -63,11 +63,11 @@ SSLSessionCacheTimeout  300
 <VirtualHost *:443>
 
 #   General setup for the virtual host
-DocumentRoot "${NEARD_LIN_PATH}/www/"
+DocumentRoot "${BEARSAMPP_LIN_PATH}/www/"
 ServerName localhost:443
 ServerAdmin admin@localhost
-ErrorLog "${NEARD_LIN_PATH}/logs/apache_error.log"
-TransferLog "${NEARD_LIN_PATH}/logs/apache_access.log"
+ErrorLog "${BEARSAMPP_LIN_PATH}/logs/apache_error.log"
+TransferLog "${BEARSAMPP_LIN_PATH}/logs/apache_access.log"
 
 #   SSL Engine Switch:
 #   Enable/Disable SSL for this virtual host.
@@ -91,9 +91,9 @@ SSLCipherSuite ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL
 #   Some ECC cipher suites (http://www.ietf.org/rfc/rfc4492.txt)
 #   require an ECC certificate which can also be configured in
 #   parallel.
-SSLCertificateFile "${NEARD_LIN_PATH}/ssl/localhost.crt"
-#SSLCertificateFile "${NEARD_LIN_PATH}/ssl/server-dsa.crt"
-#SSLCertificateFile "${NEARD_LIN_PATH}/ssl/server-ecc.crt"
+SSLCertificateFile "${BEARSAMPP_LIN_PATH}/ssl/localhost.crt"
+#SSLCertificateFile "${BEARSAMPP_LIN_PATH}/ssl/server-dsa.crt"
+#SSLCertificateFile "${BEARSAMPP_LIN_PATH}/ssl/server-ecc.crt"
 
 #   Server Private Key:
 #   If the key is not combined with the certificate, use this
@@ -101,9 +101,9 @@ SSLCertificateFile "${NEARD_LIN_PATH}/ssl/localhost.crt"
 #   you've both a RSA and a DSA private key you can configure
 #   both in parallel (to also allow the use of DSA ciphers, etc.)
 #   ECC keys, when in use, can also be configured in parallel
-SSLCertificateKeyFile "${NEARD_LIN_PATH}/ssl/localhost.pub"
-#SSLCertificateKeyFile "${NEARD_LIN_PATH}/ssl/server-dsa.key"
-#SSLCertificateKeyFile "${NEARD_LIN_PATH}/ssl/server-ecc.key"
+SSLCertificateKeyFile "${BEARSAMPP_LIN_PATH}/ssl/localhost.pub"
+#SSLCertificateKeyFile "${BEARSAMPP_LIN_PATH}/ssl/server-dsa.key"
+#SSLCertificateKeyFile "${BEARSAMPP_LIN_PATH}/ssl/server-ecc.key"
 
 #   Certificate Authority (CA):
 #   Set the CA certificate verification path where to find CA
@@ -112,8 +112,8 @@ SSLCertificateKeyFile "${NEARD_LIN_PATH}/ssl/localhost.pub"
 #   Note: Inside SSLCACertificatePath you need hash symlinks
 #         to point to the certificate files. Use the provided
 #         Makefile to update the hash symlinks after changes.
-#SSLCACertificatePath "${NEARD_LIN_PATH}/ssl/ssl.crt"
-#SSLCACertificateFile "${NEARD_LIN_PATH}/ssl/ssl.crt/ca-bundle.crt"
+#SSLCACertificatePath "${BEARSAMPP_LIN_PATH}/ssl/ssl.crt"
+#SSLCACertificateFile "${BEARSAMPP_LIN_PATH}/ssl/ssl.crt/ca-bundle.crt"
 
 #   Certificate Revocation Lists (CRL):
 #   Set the CA revocation path where to find CA CRLs for client
@@ -122,8 +122,8 @@ SSLCertificateKeyFile "${NEARD_LIN_PATH}/ssl/localhost.pub"
 #   Note: Inside SSLCARevocationPath you need hash symlinks
 #         to point to the certificate files. Use the provided
 #         Makefile to update the hash symlinks after changes.
-#SSLCARevocationPath "${NEARD_LIN_PATH}/ssl/ssl.crl"
-#SSLCARevocationFile "${NEARD_LIN_PATH}/ssl/ssl.crl/ca-bundle.crl"
+#SSLCARevocationPath "${BEARSAMPP_LIN_PATH}/ssl/ssl.crl"
+#SSLCARevocationFile "${BEARSAMPP_LIN_PATH}/ssl/ssl.crl/ca-bundle.crl"
 
 #   Client Authentication (Type):
 #   Client certificate verification type and depth.  Types are
@@ -179,7 +179,7 @@ SSLCertificateKeyFile "${NEARD_LIN_PATH}/ssl/localhost.pub"
 <FilesMatch "\.(cgi|shtml|phtml|php)$">
     SSLOptions +StdEnvVars
 </FilesMatch>
-<Directory "${NEARD_LIN_PATH}/cgi-bin">
+<Directory "${BEARSAMPP_LIN_PATH}/cgi-bin">
     AddHandler cgi-script .cgi .exe .pl .py .vbs
     SSLOptions +StdEnvVars
     Options Indexes FollowSymLinks ExecCGI
@@ -189,7 +189,7 @@ SSLCertificateKeyFile "${NEARD_LIN_PATH}/ssl/localhost.pub"
     Require local
     # END switchOnline tag - Do not replace!
 </Directory>
-<Directory "${NEARD_LIN_PATH}/www">
+<Directory "${BEARSAMPP_LIN_PATH}/www">
     SSLOptions +StdEnvVars
     Options Indexes FollowSymLinks
     AllowOverride All
@@ -230,7 +230,7 @@ BrowserMatch ".*MSIE.*" \
 #   Per-Server Logging:
 #   The home of a custom SSL log file. Use this when you want a
 #   compact non-error SSL logfile on a virtual host basis.
-CustomLog "${NEARD_LIN_PATH}/logs/apache_sslreq.log" \
+CustomLog "${BEARSAMPP_LIN_PATH}/logs/apache_sslreq.log" \
           "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
 
 </VirtualHost>                                  
