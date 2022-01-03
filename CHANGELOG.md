@@ -47,5 +47,5 @@
 * Apache 2.2.31, 2.4.17
 * Enabled http2 apache module on 2.4.17
 * Review Define directives on Apache 2.4.x
-* Create template files (.nrd) for future Neard release.
+* Create template files (.ber) for future Neard release.
 * Remove unnecessary files/folders (cgi-bin/, conf/original/, conf/ssl/, htdocs/, icons/, include/, lib/, tools/)

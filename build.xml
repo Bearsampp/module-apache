@@ -104,7 +104,7 @@
           </filterset>
           <resources>
             <file file="${bundle.path}/conf/httpd.conf"/>
-            <file file="${bundle.path}/conf/httpd.conf.nrd"/>
+            <file file="${bundle.path}/conf/httpd.conf.ber"/>
           </resources>
         </copy>
 
