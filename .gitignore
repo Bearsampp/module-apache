@@ -2,18 +2,10 @@
 /*.iml
 /.idea
 
-# Bearsampp
+# Neard
 /.dev
-/.idea/.gitignore
-/.idea/git_toolbox_prj.xml
-/.idea/module-apache.iml
-/.idea/modules.xml
-/.idea/php.xml
-/.idea/vcs.xml
-/.idea/deployment.xml
 
-# VSC
-/.VSC
-/.VS
-.VS
-.VSC
+# Visual Studio
+.vscode/
+.vs/
+.vsc/
