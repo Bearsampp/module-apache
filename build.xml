@@ -20,14 +20,11 @@
     <basename property="bundle.folder" file="${bundle.path}"/>
     <replaceproperty src="bundle.folder" dest="bundle.version" replace="${bundle.name}" with=""/>
 
-    <getmoduleuntouched name="${bundle.name}" version="${bundle.version}" propSrcDest="bundle.srcdest"
-                        propSrcFilename="bundle.srcfilename"/>
-    <condition property="bundle.srcfinal" value="${bundle.srcdest}/Apache24">
-      <available file="${bundle.srcdest}/Apache24" type="dir"/>
-    </condition>
-    <condition property="bundle.srcfinal" value="${bundle.srcdest}/Apache2.4">
-      <available file="${bundle.srcdest}/Apache2.4" type="dir"/>
-    </condition>
+    <getmoduleuntouched name="${bundle.name}" version="${bundle.version}" propSrcDest="bundle.srcdest" propSrcFilename="bundle.srcfilename"/>
+    <condition property="bundle.srcfinal" value="${bundle.srcdest}/Apache22"><available file="${bundle.srcdest}/Apache22" type="dir"/></condition>
+    <condition property="bundle.srcfinal" value="${bundle.srcdest}/Apache2.2"><available file="${bundle.srcdest}/Apache2.2" type="dir"/></condition>
+    <condition property="bundle.srcfinal" value="${bundle.srcdest}/Apache24"><available file="${bundle.srcdest}/Apache24" type="dir"/></condition>
+    <condition property="bundle.srcfinal" value="${bundle.srcdest}/Apache2.4"><available file="${bundle.srcdest}/Apache2.4" type="dir"/></condition>
     <fail unless="bundle.srcfinal" message="Main folder not found"/>
     <assertfile file="${bundle.srcfinal}/bin/httpd.exe"/>
 
@@ -35,9 +32,9 @@
     <delete dir="${apache.prep.path}"/>
     <mkdir dir="${apache.prep.path}"/>
     <copy file="${bundle.srcdest}/readme_first.html"
-          todir="${apache.prep.path}"
-          overwrite="true"
-          failonerror="false"
+      todir="${apache.prep.path}"
+      overwrite="true"
+      failonerror="false"
     />
     <copy todir="${apache.prep.path}" overwrite="true">
       <fileset dir="${bundle.srcfinal}" excludes="
@@ -71,28 +68,18 @@
             <var name="apachemodule.version" unset="true"/>
             <var name="apachemodule.dest" unset="true"/>
             <var name="apachemodule.so" unset="true"/>
-
-            <!--
-            Do we need an "or" here for older win32 builds?
             <propertyregex property="apachemodule.version" input="${apachemodules.@{apachemodule}}" regexp="apache-.*-.*-(.*)-win32" select="\1"/>
-            -->
-            <propertyregex property="apachemodule.version" input="${apachemodules.@{apachemodule}}"
-                           regexp="apache-.*-.*-(.*)-x64" select="\1"/>
 
             <!-- Download module -->
             <download url="${apachemodules.@{apachemodule}}" returnProperty="apachemodule.dest"/>
             <echo message="Module path: ${apachemodule.dest}"/>
-            <condition property="apachemodule.so"
-                       value="${apachemodule.dest}/mod_@{apachemodule}/mod_@{apachemodule}.so">
+            <condition property="apachemodule.so" value="${apachemodule.dest}/mod_@{apachemodule}/mod_@{apachemodule}.so">
               <available file="${apachemodule.dest}/mod_@{apachemodule}/mod_@{apachemodule}.so" type="file"/>
             </condition>
             <condition property="apachemodule.so" value="${apachemodule.dest}/Apache24/modules/mod_@{apachemodule}.so">
               <available file="${apachemodule.dest}/Apache24/modules/mod_@{apachemodule}.so" type="file"/>
             </condition>
             <condition property="apachemodule.so" value="${apachemodule.dest}/Apache24/modules/mod_@{apachemodule}.so">
-              <available file="${apachemodule.dest}/mod_@{apachemodule}.so" type="file"/>
-            </condition>
-            <condition property="apachemodule.so" value="${apachemodule.dest}/mod_@{apachemodule}.so">
               <available file="${apachemodule.dest}/mod_@{apachemodule}.so" type="file"/>
             </condition>
             <fail unless="apachemodule.so" message="Main so not found"/>
@@ -103,8 +90,8 @@
 
             <!-- Echo module string to temp file -->
             <echo message="#LoadModule @{apachemodule}_module modules/mod_@{apachemodule}.so${line.separator}"
-                  file="${build.tmp.path}/apache_modules.tmp"
-                  append="true"/>
+              file="${build.tmp.path}/apache_modules.tmp"
+              append="true"/>
           </sequential>
         </for>
 
