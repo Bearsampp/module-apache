@@ -66,7 +66,9 @@
             <var name="apachemodule.version" unset="true"/>
             <var name="apachemodule.dest" unset="true"/>
             <var name="apachemodule.so" unset="true"/>
-            <propertyregex property="apachemodule.version" input="${apachemodules.@{apachemodule}}" regexp="apache-.*-.*-(.*)-x64" select="\1"/>
+
+            <!-- THIS IS BROKEN FOR NEWER BUILDS THAT DON'T HAVE AN APACHE*.* FOLDER IN THE MODULE -->
+          <propertyregex property="apachemodule.version" input="${apachemodules.@{apachemodule}}" regexp="apache-.*-.*-(.*)-win32" select="\1"/>
 
             <!-- Download module -->
             <download url="${apachemodules.@{apachemodule}}" returnProperty="apachemodule.dest"/>
