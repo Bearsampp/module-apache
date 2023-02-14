@@ -68,11 +68,14 @@
             <var name="apachemodule.so" unset="true"/>
 
             <!-- THIS IS BROKEN FOR NEWER BUILDS THAT DON'T HAVE AN APACHE*.* FOLDER IN THE MODULE -->
-          <propertyregex property="apachemodule.version" input="${apachemodules.@{apachemodule}}" regexp="apache-.*-.*-(.*)-win32" select="\1"/>
+          <propertyregex property="apachemodule.version" input="${apachemodules.@{apachemodule}}" regexp="apache-.*-.*-(.*)" select="\1"/>
 
             <!-- Download module -->
             <download url="${apachemodules.@{apachemodule}}" returnProperty="apachemodule.dest"/>
             <echo message="Module path: ${apachemodule.dest}"/>
+            <condition property="apachemodule.so" value="${apachemodule.dest}/mod_@{apachemodule}.so">
+              <available file="${apachemodule.dest}/mod_@{apachemodule}.so" type="file"/>
+            </condition>
             <condition property="apachemodule.so" value="${apachemodule.dest}/mod_@{apachemodule}/mod_@{apachemodule}.so">
               <available file="${apachemodule.dest}/mod_@{apachemodule}/mod_@{apachemodule}.so" type="file"/>
             </condition>
