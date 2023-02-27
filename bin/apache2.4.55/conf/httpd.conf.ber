@@ -184,6 +184,10 @@ LoadModule status_module modules/mod_status.so
 #LoadModule xml2enc_module modules/mod_xml2enc.so
 @APACHE_MODULES@
 
+# Hack for bug which won't auto create this with apache 2.4.55
+PHPIniDir "${BEARSAMPP_LIN_PATH}/bin/php/current"
+LoadFile "${BEARSAMPP_LIN_PATH}/bin/php/current/php8ts.dll"
+LoadModule php_module "${BEARSAMPP_LIN_PATH}/bin/php/current/php8apache2_4.dll"
 
 <IfModule unixd_module>
 #
