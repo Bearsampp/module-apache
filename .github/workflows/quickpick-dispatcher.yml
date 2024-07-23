@@ -1,12 +1,15 @@
 name: Quickpick Dispatcher
 
 on:
-    push:
+    pull_request:
+        types:
+            - closed
         branches:
             - 'main'
 
 jobs:
-    labeler:
+    if_merged:
+        if: github.event.pull_request.merged == true
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
@@ -15,7 +18,7 @@ jobs:
             - name: Invoke workflow in another repo with inputs
               uses: benc-uk/workflow-dispatch@v1
               with:
-                workflow: combine_releases.yml
-                repo: Bearsampp/Bearsampp
-                # Required when using the `repo` option. Either a PAT or a token generated from the GitHub app or CLI
-                token: "${{ secrets.GH_PAT }}"
+                  workflow: combine_releases.yml
+                  repo: Bearsampp/Bearsampp
+                  # Required when using the `repo` option. Either a PAT or a token generated from the GitHub app or CLI
+                  token: "${{ secrets.GH_PAT }}"
