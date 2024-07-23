@@ -1,0 +1,22 @@
+name: Quickpick Dispatcher
+
+on:
+    push:
+        branches:
+            - 'main'
+
+jobs:
+    labeler:
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+
+            - name: Invoke workflow in another repo with inputs
+              uses: benc-uk/workflow-dispatch@v1
+              with:
+                workflow: combine_releases.yml
+                repo: Bearsampp/Bearsampp
+                inputs: '{ "commit-message": 'Created via dispatcher' }'
+                # Required when using the `repo` option. Either a PAT or a token generated from the GitHub app or CLI
+                token: "${{ secrets.GH_PAT }}"
