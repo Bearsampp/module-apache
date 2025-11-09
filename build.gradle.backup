@@ -39,14 +39,7 @@ ext {
     bundleType = buildProps.getProperty('bundle.type', 'bins')
     bundleFormat = buildProps.getProperty('bundle.format', '7z')
 
-    // Build paths - with configurable base path
-    // Priority: 1) build.properties, 2) Environment variable, 3) Default
-    def buildPathFromProps = buildProps.getProperty('build.path', '').trim()
-    def buildPathFromEnv = System.getenv('BEARSAMPP_BUILD_PATH') ?: ''
-    def defaultBuildPath = "${rootDir}/../bearsampp-build"
-    
-    buildBasePath = buildPathFromProps ?: (buildPathFromEnv ?: defaultBuildPath)
-    
+    // Build paths
     buildTmpPath = file("${buildDir}/tmp").absolutePath
     bundleTmpPrepPath = file("${buildDir}/prep").absolutePath
 }
@@ -113,7 +106,7 @@ def downloadAndExtractApache(String version, File destDir, Project proj) {
     // Use 7zip or built-in extraction
     if (filename.endsWith('.7z')) {
         // Try to use 7zip if available
-        def sevenZipPath = find7ZipExecutable()
+        def sevenZipPath = findSevenZip()
         if (sevenZipPath) {
             println "  Using 7zip: ${sevenZipPath}"
             def command = [
@@ -138,7 +131,7 @@ def downloadAndExtractApache(String version, File destDir, Project proj) {
                 throw new GradleException("7zip extraction failed with exit code: ${exitCode}")
             }
         } else {
-            throw new GradleException("7-Zip not found. Please install 7-Zip or extract manually.")
+            throw new GradleException("7zip not found. Please install 7zip or extract manually.")
         }
     } else if (filename.endsWith('.zip')) {
         proj.copy {
@@ -163,41 +156,35 @@ def downloadAndExtractApache(String version, File destDir, Project proj) {
     return apacheDir
 }
 
-// Function to find 7-Zip executable
-def find7ZipExecutable() {
-    // Check environment variable
-    def sevenZipHome = System.getenv('7Z_HOME')
-    if (sevenZipHome) {
-        def exe = file("${sevenZipHome}/7z.exe")
-        if (exe.exists()) {
-            return exe.absolutePath
-        }
-    }
+// Function to find 7zip executable
+def findSevenZip() {
+    // Common 7zip locations
+    def locations = [
+        'C:\\Program Files\\7-Zip\\7z.exe',
+        'C:\\Program Files (x86)\\7-Zip\\7z.exe',
+        System.getenv('PROGRAMFILES') ? "${System.getenv('PROGRAMFILES')}\\7-Zip\\7z.exe" : null,
+        System.getenv('PROGRAMFILES(X86)') ? "${System.getenv('PROGRAMFILES(X86)')}\\7-Zip\\7z.exe" : null,
+        // Check in dev path
+        "${devPath}/bin/7zip/x64/7za.exe",
+        "${devPath}/bin/7zip/7za.exe"
+    ].findAll { it != null }
 
-    // Check common installation paths
-    def commonPaths = [
-        'C:/Program Files/7-Zip/7z.exe',
-        'C:/Program Files (x86)/7-Zip/7z.exe',
-        'D:/Program Files/7-Zip/7z.exe',
-        'D:/Program Files (x86)/7-Zip/7z.exe'
-    ]
-
-    for (path in commonPaths) {
-        def exe = file(path)
-        if (exe.exists()) {
-            return exe.absolutePath
+    for (location in locations) {
+        def f = file(location)
+        if (f.exists()) {
+            return f.absolutePath
         }
     }
 
     // Try to find in PATH
     try {
-        def process = ['where', '7z.exe'].execute()
-        process.waitFor()
-        if (process.exitValue() == 0) {
-            def output = process.text.trim()
-            if (output) {
-                return output.split('\n')[0].trim()
-            }
+        def result = exec {
+            commandLine 'where', '7z'
+            ignoreExitValue true
+            standardOutput = new ByteArrayOutputStream()
+        }
+        if (result.exitValue == 0) {
+            return result.standardOutput.toString().trim().split('\n')[0]
         }
     } catch (Exception e) {
         // Ignore
@@ -243,32 +230,6 @@ def findApacheDirectory(File extractPath) {
     return foundDir
 }
 
-// Helper function to get available versions
-def getAvailableVersions() {
-    def versions = []
-    
-    // Check bin directory
-    def binDir = file("${projectDir}/bin")
-    if (binDir.exists()) {
-        def binVersions = binDir.listFiles()
-            ?.findAll { it.isDirectory() && it.name.startsWith(bundleName) && it.name != 'archived' }
-            ?.collect { it.name.replace(bundleName, '') } ?: []
-        versions.addAll(binVersions)
-    }
-    
-    // Check bin/archived subdirectory
-    def archivedDir = file("${projectDir}/bin/archived")
-    if (archivedDir.exists()) {
-        def archivedVersions = archivedDir.listFiles()
-            ?.findAll { it.isDirectory() && it.name.startsWith(bundleName) }
-            ?.collect { it.name.replace(bundleName, '') } ?: []
-        versions.addAll(archivedVersions)
-    }
-    
-    // Remove duplicates and sort
-    return versions.unique().sort()
-}
-
 // ============================================================================
 // GRADLE NATIVE TASKS
 // ============================================================================
@@ -289,7 +250,6 @@ tasks.register('info') {
     def bundleReleaseValue = bundleRelease
     def bundleTypeValue = bundleType
     def bundleFormatValue = bundleFormat
-    def buildBasePathValue = buildBasePath
     def javaVersion = JavaVersion.current()
     def javaHome = System.getProperty('java.home')
     def gradleVersion = gradle.gradleVersion
@@ -315,7 +275,6 @@ tasks.register('info') {
           Project Dir:  ${projectBasedirValue}
           Root Dir:     ${rootDirValue}
           Dev Path:     ${devPathValue}
-          Build Path:   ${buildBasePathValue}
 
         Java:
           Version:      ${javaVersion}
@@ -342,6 +301,44 @@ tasks.register('info') {
     }
 }
 
+// Helper function to get all available versions from bin/ and bin/archived/
+def getAllAvailableVersions() {
+    def versions = []
+    def binDir = file("${projectDir}/bin")
+    
+    if (!binDir.exists()) {
+        return versions
+    }
+    
+    // Get versions from bin/ directory
+    binDir.listFiles()?.each { file ->
+        if (file.isDirectory() && file.name.startsWith(bundleName) && file.name != 'archived') {
+            versions.add([
+                version: file.name.replace(bundleName, ''),
+                path: file,
+                location: 'bin/'
+            ])
+        }
+    }
+    
+    // Get versions from bin/archived/ directory
+    def archivedDir = file("${projectDir}/bin/archived")
+    if (archivedDir.exists()) {
+        archivedDir.listFiles()?.each { file ->
+            if (file.isDirectory() && file.name.startsWith(bundleName)) {
+                versions.add([
+                    version: file.name.replace(bundleName, ''),
+                    path: file,
+                    location: 'bin/archived/'
+                ])
+            }
+        }
+    }
+    
+    // Sort by version number
+    return versions.sort { it.version }
+}
+
 // Task: Main release task
 tasks.register('release') {
     group = 'build'
@@ -350,9 +347,9 @@ tasks.register('release') {
     doLast {
         def versionToBuild = project.findProperty('bundleVersion')
 
-        // Interactive mode if no version specified
+        // Interactive mode if no version specified (like Ant)
         if (!versionToBuild) {
-            def versions = getAvailableVersions()
+            def versions = getAllAvailableVersions()
 
             if (versions.isEmpty()) {
                 throw new GradleException("No versions found in bin/ or bin/archived/ directories")
@@ -362,19 +359,9 @@ tasks.register('release') {
             println "=".multiply(70)
             println "Available ${bundleName} versions:"
             println "=".multiply(70)
-            
-            // Show versions with location tags
-            def binDir = file("${projectDir}/bin")
-            def archivedDir = file("${projectDir}/bin/archived")
-            
-            versions.eachWithIndex { version, index ->
-                def location = ""
-                if (binDir.exists() && file("${binDir}/${bundleName}${version}").exists()) {
-                    location = "[bin]"
-                } else if (archivedDir.exists() && file("${archivedDir}/${bundleName}${version}").exists()) {
-                    location = "[bin/archived]"
-                }
-                println "  ${(index + 1).toString().padLeft(2)}. ${version.padRight(15)} ${location}"
+            versions.eachWithIndex { versionInfo, index ->
+                def locationTag = versionInfo.location == 'bin/archived/' ? '[archived]' : '[current] '
+                println "  ${(index + 1).toString().padLeft(2)}. ${versionInfo.version.padRight(10)} ${locationTag}"
             }
             println "=".multiply(70)
             println ""
@@ -410,7 +397,7 @@ tasks.register('release') {
             if (input.isInteger()) {
                 def index = input.toInteger() - 1
                 if (index >= 0 && index < versions.size()) {
-                    versionToBuild = versions[index]
+                    versionToBuild = versions[index].version
                 } else {
                     throw new GradleException("Invalid selection: ${input}. Please choose 1-${versions.size()}")
                 }
@@ -435,9 +422,9 @@ tasks.register('release') {
         }
 
         if (!bundlePath.exists()) {
-            def allVersions = getAvailableVersions()
+            def allVersions = getAllAvailableVersions()
             def availableVersionsList = allVersions.collect { 
-                "  - ${it}" 
+                "  - ${it.version} (${it.location})" 
             }.join('\n') ?: "  (none found)"
 
             throw new GradleException("""
@@ -594,20 +581,21 @@ tasks.register('release') {
         }
 
         println ""
-        println "Preparing archive..."
 
-        // Determine build output path following Bruno pattern
-        // bearsampp-build/{bundleType}/{bundleName}/{bundleRelease}
-        def buildPath = file(buildBasePath)
-        def buildBinsPath = file("${buildPath}/${bundleType}/${bundleName}/${bundleRelease}")
+        // Now compress and create hash files
+        println "=".multiply(70)
+        println "Creating release package..."
+        println "=".multiply(70)
+
+        // Determine build output path (go up one more level from rootDir to get to Bearsampp-dev)
+        def buildPath = file("${rootDir}/../bearsampp-build")
+        def buildBinsPath = file("${buildPath}/bins/${bundleName}/${bundleRelease}")
         buildBinsPath.mkdirs()
 
-        // Build archive filename
         def destFile = file("${buildBinsPath}/bearsampp-${bundleName}-${bundleVersion}-${bundleRelease}")
 
-        // Compress based on format
+        // Compress to 7z or zip based on bundle.format
         if (bundleFormat == '7z') {
-            // 7z format
             def archiveFile = file("${destFile}.7z")
             if (archiveFile.exists()) {
                 delete archiveFile
@@ -615,17 +603,13 @@ tasks.register('release') {
 
             println "Compressing ${bundleName}${bundleVersion} to ${archiveFile.name}..."
 
-            // Find 7z executable
-            def sevenZipExe = find7ZipExecutable()
-            if (!sevenZipExe) {
-                throw new GradleException("7-Zip not found. Please install 7-Zip or set 7Z_HOME environment variable.")
+            def sevenZipPath = findSevenZip()
+            if (!sevenZipPath) {
+                throw new GradleException("7zip not found. Cannot create archive.")
             }
 
-            println "Using 7-Zip: ${sevenZipExe}"
-
-            // Create 7z archive
             def command = [
-                sevenZipExe,
+                sevenZipPath.toString(),
                 'a',
                 '-t7z',
                 archiveFile.absolutePath.toString(),
@@ -734,7 +718,10 @@ tasks.register('releaseAll') {
             throw new GradleException("bin/ directory not found")
         }
 
-        def versions = getAvailableVersions()
+        def versions = binDir.listFiles()
+            ?.findAll { it.isDirectory() && it.name.startsWith(bundleName) }
+            ?.collect { it.name.replace(bundleName, '') }
+            ?.sort() ?: []
 
         if (versions.isEmpty()) {
             throw new GradleException("No versions found in bin/ directory")
@@ -757,10 +744,6 @@ tasks.register('releaseAll') {
             try {
                 // Call the release task logic for this version
                 def bundlePath = file("${projectDir}/bin/${bundleName}${version}")
-
-                if (!bundlePath.exists()) {
-                    bundlePath = file("${projectDir}/bin/archived/${bundleName}${version}")
-                }
 
                 if (!bundlePath.exists()) {
                     throw new GradleException("Bundle path not found: ${bundlePath}")
@@ -962,11 +945,6 @@ tasks.register('verify') {
         // Check bin directory
         checks['bin directory'] = file("${projectDir}/bin").exists()
 
-        // Check 7-Zip if format is 7z
-        if (bundleFormat == '7z') {
-            checks['7-Zip'] = find7ZipExecutable() != null
-        }
-
         println "\nEnvironment Check Results:"
         println "-".multiply(60)
         checks.each { name, passed ->
@@ -1013,41 +991,48 @@ tasks.register('listReleases') {
     }
 }
 
-// Task: List available bundle versions in bin and bin/archived directories
+// Task: List available bundle versions in bin directory
 tasks.register('listVersions') {
     group = 'help'
     description = 'List all available bundle versions in bin/ and bin/archived/ directories'
 
     doLast {
-        def versions = getAvailableVersions()
+        def allVersions = getAllAvailableVersions()
 
-        if (versions.isEmpty()) {
-            println "\nNo versions found in bin/ or bin/archived/ directories"
+        if (allVersions.isEmpty()) {
+            println "No versions found in bin/ or bin/archived/ directories"
             return
         }
 
         println "\nAvailable ${bundleName} versions:"
-        println "-".multiply(60)
+        println "-".multiply(80)
         
-        // Show which directory each version is in
-        def binDir = file("${projectDir}/bin")
-        def archivedDir = file("${projectDir}/bin/archived")
+        // Group by location
+        def currentVersions = allVersions.findAll { it.location == 'bin/' }
+        def archivedVersions = allVersions.findAll { it.location == 'bin/archived/' }
         
-        versions.each { version ->
-            def location = ""
-            if (binDir.exists() && file("${binDir}/${bundleName}${version}").exists()) {
-                location = "[bin]"
-            } else if (archivedDir.exists() && file("${archivedDir}/${bundleName}${version}").exists()) {
-                location = "[bin/archived]"
+        if (!currentVersions.isEmpty()) {
+            println "\nCurrent versions (bin/):"
+            currentVersions.each { versionInfo ->
+                println "  ${versionInfo.version}"
             }
-            println "  ${version.padRight(15)} ${location}"
         }
-        println "-".multiply(60)
-        println "Total versions: ${versions.size()}"
+        
+        if (!archivedVersions.isEmpty()) {
+            println "\nArchived versions (bin/archived/):"
+            archivedVersions.each { versionInfo ->
+                println "  ${versionInfo.version}"
+            }
+        }
+        
+        println "-".multiply(80)
+        println "Total versions: ${allVersions.size()} (${currentVersions.size()} current, ${archivedVersions.size()} archived)"
 
-        if (!versions.isEmpty()) {
+        if (!allVersions.isEmpty()) {
             println "\nTo build a specific version:"
-            println "  gradle release -PbundleVersion=${versions.last()}"
+            println "  gradle release -PbundleVersion=${allVersions.last().version}"
+            println "\nOr run interactively:"
+            println "  gradle release"
         }
     }
 }
