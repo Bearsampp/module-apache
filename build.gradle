@@ -151,18 +151,9 @@ def downloadAndExtractApache(String version, File destDir, Project proj) {
     }
 
     println "  Found Apache directory: ${apacheDir.name}"
+    println "  Apache ${version} ready at: ${apacheDir.absolutePath}"
 
-    // Copy to destination
-    println "  Copying to: ${destDir}"
-    destDir.mkdirs()
-    copy {
-        from apacheDir
-        into file("${destDir}/${apacheDir.name}")
-    }
-
-    println "  Apache ${version} ready at: ${destDir}/${apacheDir.name}"
-
-    return file("${destDir}/${apacheDir.name}")
+    return apacheDir
 }
 
 // Function to find 7zip executable
@@ -415,7 +406,7 @@ tasks.register('release') {
         def bundleFolder = bundlePath.name
         def bundleVersion = bundleFolder.replace(bundleName, '')
 
-        // Determine source paths
+        // Determine source paths - check bin directory first, then build directory
         def bundleSrcDest = bundlePath
         def bundleSrcFinal = null
 
@@ -424,23 +415,33 @@ tasks.register('release') {
         } else if (file("${bundleSrcDest}/Apache2.4").exists()) {
             bundleSrcFinal = file("${bundleSrcDest}/Apache2.4")
         } else {
-            // Apache binaries not found - download and extract them
-            println ""
-            println "Apache binaries not found in ${bundleSrcDest}"
-            println "Downloading Apache ${bundleVersion}..."
-            println ""
+            // Apache binaries not found in bin/ - check if already downloaded to build/
+            def buildExtractPath = file("${buildDir}/extract/${bundleVersion}")
+            def buildApacheDir = findApacheDirectory(buildExtractPath)
 
-            try {
-                bundleSrcFinal = downloadAndExtractApache(bundleVersion, bundleSrcDest, project)
-            } catch (Exception e) {
-                throw new GradleException("""
-                    Failed to download Apache binaries: ${e.message}
+            if (buildApacheDir && buildApacheDir.exists()) {
+                println "Using cached Apache binaries from build directory"
+                bundleSrcFinal = buildApacheDir
+            } else {
+                // Download and extract to build directory only
+                println ""
+                println "Apache binaries not found"
+                println "Downloading Apache ${bundleVersion}..."
+                println ""
 
-                    You can manually download and extract Apache binaries to:
-                      ${bundleSrcDest}/Apache24/
+                try {
+                    // Download and extract to build directory
+                    bundleSrcFinal = downloadAndExtractApache(bundleVersion, file("${buildDir}/extract"), project)
+                } catch (Exception e) {
+                    throw new GradleException("""
+                        Failed to download Apache binaries: ${e.message}
 
-                    Or check that version ${bundleVersion} exists in releases.properties
-                """.stripIndent())
+                        You can manually download and extract Apache binaries to:
+                          ${bundleSrcDest}/Apache24/
+
+                        Or check that version ${bundleVersion} exists in releases.properties
+                    """.stripIndent())
+                }
             }
         }
 
@@ -555,7 +556,7 @@ tasks.register('release') {
         def buildBinsPath = file("${buildPath}/bins/${bundleName}/${bundleRelease}")
         buildBinsPath.mkdirs()
 
-        def destFile = file("${buildBinsPath}/${bundleName}-${bundleVersion}-${bundleRelease}")
+        def destFile = file("${buildBinsPath}/bearsampp-${bundleName}-${bundleVersion}-${bundleRelease}")
 
         // Compress to 7z or zip based on bundle.format
         if (bundleFormat == '7z') {
