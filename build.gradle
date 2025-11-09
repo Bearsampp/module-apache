@@ -93,8 +93,8 @@ def downloadAndExtractApache(String version, File destDir) {
 
     // Determine filename from URL
     def filename = downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1)
-    def downloadDir = file("${buildDir}/downloads")
-    def extractDir = file("${buildDir}/extract")
+    def downloadDir = file(bundleTmpDownloadPath)
+    def extractDir = file(bundleTmpExtractPath)
     downloadDir.mkdirs()
     extractDir.mkdirs()
 
@@ -486,23 +486,23 @@ tasks.register('release') {
         } else if (file("${bundleSrcDest}/Apache2.4").exists()) {
             bundleSrcFinal = file("${bundleSrcDest}/Apache2.4")
         } else {
-            // Apache binaries not found in bin/ - check if already downloaded to build/
-            def buildExtractPath = file("${buildDir}/extract/${bundleVersion}")
-            def buildApacheDir = findApacheDirectory(buildExtractPath)
+            // Apache binaries not found in bin/ - check if already downloaded to tmp extract path
+            def tmpExtractPath = file("${bundleTmpExtractPath}/${bundleVersion}")
+            def tmpApacheDir = findApacheDirectory(tmpExtractPath)
 
-            if (buildApacheDir && buildApacheDir.exists()) {
-                println "Using cached Apache binaries from build directory"
-                bundleSrcFinal = buildApacheDir
+            if (tmpApacheDir && tmpApacheDir.exists()) {
+                println "Using cached Apache binaries from tmp extract directory"
+                bundleSrcFinal = tmpApacheDir
             } else {
-                // Download and extract to build directory only
+                // Download and extract to tmp directory
                 println ""
                 println "Apache binaries not found"
                 println "Downloading Apache ${bundleVersion}..."
                 println ""
 
                 try {
-                    // Download and extract to build directory
-                    bundleSrcFinal = downloadAndExtractApache(bundleVersion, file("${buildDir}/extract"))
+                    // Download and extract to tmp directory
+                    bundleSrcFinal = downloadAndExtractApache(bundleVersion, file(bundleTmpExtractPath))
                 } catch (Exception e) {
                     throw new GradleException("""
                         Failed to download Apache binaries: ${e.message}
