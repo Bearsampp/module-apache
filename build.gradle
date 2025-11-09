@@ -66,7 +66,7 @@ repositories {
 // ============================================================================
 
 // Function to download and extract Apache binaries
-def downloadAndExtractApache(String version, File destDir, Project proj) {
+def downloadAndExtractApache(String version, File destDir) {
     // Load releases.properties to get download URL
     def releasesFile = file('releases.properties')
     if (!releasesFile.exists()) {
@@ -141,8 +141,8 @@ def downloadAndExtractApache(String version, File destDir, Project proj) {
             throw new GradleException("7-Zip not found. Please install 7-Zip or extract manually.")
         }
     } else if (filename.endsWith('.zip')) {
-        proj.copy {
-            from proj.zipTree(downloadedFile)
+        copy {
+            from zipTree(downloadedFile)
             into extractPath
         }
     } else {
@@ -347,8 +347,11 @@ tasks.register('release') {
     group = 'build'
     description = 'Build release package (use -PbundleVersion=X.X.X to specify version)'
 
+    // Capture property at configuration time to avoid deprecation warning
+    def bundleVersionProperty = project.findProperty('bundleVersion')
+
     doLast {
-        def versionToBuild = project.findProperty('bundleVersion')
+        def versionToBuild = bundleVersionProperty
 
         // Interactive mode if no version specified
         if (!versionToBuild) {
@@ -480,7 +483,7 @@ tasks.register('release') {
 
                 try {
                     // Download and extract to build directory
-                    bundleSrcFinal = downloadAndExtractApache(bundleVersion, file("${buildDir}/extract"), project)
+                    bundleSrcFinal = downloadAndExtractApache(bundleVersion, file("${buildDir}/extract"))
                 } catch (Exception e) {
                     throw new GradleException("""
                         Failed to download Apache binaries: ${e.message}
