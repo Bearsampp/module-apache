@@ -205,6 +205,29 @@ def downloadFromModulesUntouched(String version) {
     return apacheDir
 }
 
+// Function to load remote apache.properties from modules-untouched
+def loadRemoteApacheProperties() {
+    def remoteUrl = "https://raw.githubusercontent.com/Bearsampp/modules-untouched/main/modules/apache.properties"
+    
+    try {
+        println "Loading remote apache.properties from modules-untouched..."
+        def connection = new URL(remoteUrl).openConnection()
+        connection.setConnectTimeout(10000)
+        connection.setReadTimeout(10000)
+        
+        def remoteProps = new Properties()
+        connection.inputStream.withStream { stream ->
+            remoteProps.load(stream)
+        }
+        
+        println "  Loaded ${remoteProps.size()} versions from remote apache.properties"
+        return remoteProps
+    } catch (Exception e) {
+        println "  Warning: Could not load remote apache.properties: ${e.message}"
+        return new Properties()
+    }
+}
+
 // Function to download and extract Apache binaries
 def downloadAndExtractApache(String version, File destDir) {
     // Load releases.properties to get download URL
@@ -218,22 +241,35 @@ def downloadAndExtractApache(String version, File destDir) {
 
     def downloadUrl = releases.getProperty(version)
     if (!downloadUrl) {
-        // Check modules-untouched GitHub repository as fallback
+        // Check remote apache.properties from modules-untouched
         println "Version ${version} not found in releases.properties"
+        println "Checking remote apache.properties from modules-untouched..."
         
-        def untouchedDir = downloadFromModulesUntouched(version)
-        if (untouchedDir) {
-            println "Using Apache ${version} from modules-untouched repository"
-            return untouchedDir
-        }
+        def remoteProps = loadRemoteApacheProperties()
+        downloadUrl = remoteProps.getProperty(version)
         
-        throw new GradleException("""
-            Version ${version} not found in releases.properties or modules-untouched repository.
+        if (downloadUrl) {
+            println "  Found version ${version} in remote apache.properties"
+            println "  URL: ${downloadUrl}"
+        } else {
+            // Check modules-untouched GitHub repository as fallback
+            println "Version ${version} not found in remote apache.properties"
             
-            Please either:
-            1. Add the version to releases.properties with a download URL
-            2. Upload Apache binaries to: https://github.com/Bearsampp/modules-untouched/tree/main/apache${version}/
-        """.stripIndent())
+            def untouchedDir = downloadFromModulesUntouched(version)
+            if (untouchedDir) {
+                println "Using Apache ${version} from modules-untouched repository"
+                return untouchedDir
+            }
+            
+            throw new GradleException("""
+                Version ${version} not found in releases.properties, remote apache.properties, or modules-untouched repository.
+                
+                Please either:
+                1. Add the version to releases.properties with a download URL
+                2. Add the version to https://github.com/Bearsampp/modules-untouched/blob/main/modules/apache.properties
+                3. Upload Apache binaries to: https://github.com/Bearsampp/modules-untouched/tree/main/apache${version}/
+            """.stripIndent())
+        }
     }
 
     println "Downloading Apache ${version} from:"
