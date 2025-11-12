@@ -72,6 +72,139 @@ repositories {
 // HELPER FUNCTIONS
 // ============================================================================
 
+// Function to download from modules-untouched GitHub repository
+def downloadFromModulesUntouched(String version) {
+    println "Checking modules-untouched repository on GitHub..."
+    
+    // GitHub raw content URL for modules-untouched (using main branch)
+    def githubBaseUrl = "https://github.com/Bearsampp/modules-untouched/raw/main/apache${version}"
+    
+    // Try to detect the archive file by checking common patterns
+    def possibleArchives = [
+        "bearsampp-apache-${version}.7z",
+        "apache-${version}.7z",
+        "apache${version}.7z",
+        "bearsampp-apache-${version}.zip",
+        "apache-${version}.zip",
+        "apache${version}.zip"
+    ]
+    
+    def downloadDir = file(bundleTmpDownloadPath)
+    def extractDir = file(bundleTmpExtractPath)
+    downloadDir.mkdirs()
+    extractDir.mkdirs()
+    
+    def downloadedFile = null
+    def archiveUrl = null
+    
+    // Try to find which archive exists
+    for (archiveName in possibleArchives) {
+        def testUrl = "${githubBaseUrl}/${archiveName}"
+        println "  Checking: ${testUrl}"
+        
+        try {
+            // Test if URL exists by attempting a HEAD request
+            def connection = new URL(testUrl).openConnection()
+            connection.setRequestMethod("HEAD")
+            connection.setConnectTimeout(5000)
+            connection.setReadTimeout(5000)
+            
+            def responseCode = connection.getResponseCode()
+            if (responseCode == 200) {
+                archiveUrl = testUrl
+                downloadedFile = file("${downloadDir}/modules-untouched-${archiveName}")
+                println "  Found: ${archiveName}"
+                break
+            }
+        } catch (Exception e) {
+            // URL doesn't exist, try next
+        }
+    }
+    
+    if (!archiveUrl) {
+        println "  Apache ${version} not found in modules-untouched repository"
+        return null
+    }
+    
+    // Download the archive if not already cached
+    if (!downloadedFile.exists()) {
+        println "  Downloading from modules-untouched: ${archiveUrl}"
+        try {
+            ant.get(src: archiveUrl, dest: downloadedFile, verbose: true)
+            println "  Download complete"
+        } catch (Exception e) {
+            println "  Download failed: ${e.message}"
+            return null
+        }
+    } else {
+        println "  Using cached file: ${downloadedFile.name}"
+    }
+    
+    // Extract the archive
+    println "  Extracting archive..."
+    def extractPath = file("${extractDir}/modules-untouched-${version}")
+    if (extractPath.exists()) {
+        delete extractPath
+    }
+    extractPath.mkdirs()
+    
+    def filename = downloadedFile.name
+    
+    // Use 7zip or built-in extraction
+    if (filename.endsWith('.7z')) {
+        def sevenZipPath = find7ZipExecutable()
+        if (sevenZipPath) {
+            println "  Using 7zip: ${sevenZipPath}"
+            def command = [
+                sevenZipPath.toString(),
+                'x',
+                downloadedFile.absolutePath.toString(),
+                "-o${extractPath.absolutePath}".toString(),
+                '-y'
+            ]
+            def process = new ProcessBuilder(command as String[])
+                .directory(extractPath)
+                .redirectErrorStream(true)
+                .start()
+            
+            process.inputStream.eachLine { line ->
+                println "    ${line}"
+            }
+            
+            def exitCode = process.waitFor()
+            if (exitCode != 0) {
+                println "  7zip extraction failed"
+                return null
+            }
+        } else {
+            println "  7-Zip not found, cannot extract .7z file"
+            return null
+        }
+    } else if (filename.endsWith('.zip')) {
+        copy {
+            from zipTree(downloadedFile)
+            into extractPath
+        }
+    } else {
+        println "  Unsupported archive format: ${filename}"
+        return null
+    }
+    
+    println "  Extraction complete"
+    
+    // Find the Apache directory in the extracted files
+    def apacheDir = findApacheDirectory(extractPath)
+    if (!apacheDir) {
+        println "  Could not find Apache directory in extracted files"
+        return null
+    }
+    
+    println "  Found Apache directory: ${apacheDir.name}"
+    println "  Apache ${version} from modules-untouched ready at: ${apacheDir.absolutePath}"
+    
+    return apacheDir
+}
+
 // Function to download and extract Apache binaries
 def downloadAndExtractApache(String version, File destDir) {
     // Load releases.properties to get download URL
@@ -85,7 +218,22 @@ def downloadAndExtractApache(String version, File destDir) {
 
     def downloadUrl = releases.getProperty(version)
     if (!downloadUrl) {
-        throw new GradleException("Version ${version} not found in releases.properties")
+        // Check modules-untouched GitHub repository as fallback
+        println "Version ${version} not found in releases.properties"
+        
+        def untouchedDir = downloadFromModulesUntouched(version)
+        if (untouchedDir) {
+            println "Using Apache ${version} from modules-untouched repository"
+            return untouchedDir
+        }
+        
+        throw new GradleException("""
+            Version ${version} not found in releases.properties or modules-untouched repository.
+            
+            Please either:
+            1. Add the version to releases.properties with a download URL
+            2. Upload Apache binaries to: https://github.com/Bearsampp/modules-untouched/tree/main/apache${version}/
+        """.stripIndent())
     }
 
     println "Downloading Apache ${version} from:"
@@ -486,32 +634,41 @@ tasks.register('release') {
         } else if (file("${bundleSrcDest}/Apache2.4").exists()) {
             bundleSrcFinal = file("${bundleSrcDest}/Apache2.4")
         } else {
-            // Apache binaries not found in bin/ - check if already downloaded to tmp extract path
-            def tmpExtractPath = file("${bundleTmpExtractPath}/${bundleVersion}")
-            def tmpApacheDir = findApacheDirectory(tmpExtractPath)
-
-            if (tmpApacheDir && tmpApacheDir.exists()) {
-                println "Using cached Apache binaries from tmp extract directory"
-                bundleSrcFinal = tmpApacheDir
+            // Apache binaries not found in bin/ - check modules-untouched repository first
+            println ""
+            println "Apache binaries not found in bin/ directory"
+            
+            // Check modules-untouched GitHub repository
+            def untouchedDir = downloadFromModulesUntouched(bundleVersion)
+            if (untouchedDir) {
+                println "Using Apache ${bundleVersion} from modules-untouched repository"
+                bundleSrcFinal = untouchedDir
             } else {
-                // Download and extract to tmp directory
-                println ""
-                println "Apache binaries not found"
-                println "Downloading Apache ${bundleVersion}..."
-                println ""
+                // Check if already downloaded to tmp extract path
+                def tmpExtractPath = file("${bundleTmpExtractPath}/${bundleVersion}")
+                def tmpApacheDir = findApacheDirectory(tmpExtractPath)
 
-                try {
+                if (tmpApacheDir && tmpApacheDir.exists()) {
+                    println "Using cached Apache binaries from tmp extract directory"
+                    bundleSrcFinal = tmpApacheDir
+                } else {
                     // Download and extract to tmp directory
-                    bundleSrcFinal = downloadAndExtractApache(bundleVersion, file(bundleTmpExtractPath))
-                } catch (Exception e) {
-                    throw new GradleException("""
-                        Failed to download Apache binaries: ${e.message}
+                    println "Downloading Apache ${bundleVersion}..."
+                    println ""
 
-                        You can manually download and extract Apache binaries to:
-                          ${bundleSrcDest}/Apache24/
+                    try {
+                        // Download and extract to tmp directory (or use modules-untouched as fallback)
+                        bundleSrcFinal = downloadAndExtractApache(bundleVersion, file(bundleTmpExtractPath))
+                    } catch (Exception e) {
+                        throw new GradleException("""
+                            Failed to obtain Apache binaries: ${e.message}
 
-                        Or check that version ${bundleVersion} exists in releases.properties
-                    """.stripIndent())
+                            You can manually:
+                            1. Download and extract Apache binaries to: ${bundleSrcDest}/Apache24/
+                            2. Add version ${bundleVersion} to releases.properties with a download URL
+                            3. Upload Apache binaries to: https://github.com/Bearsampp/modules-untouched/tree/main/apache${bundleVersion}/
+                        """.stripIndent())
+                    }
                 }
             }
         }
