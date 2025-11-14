@@ -2,29 +2,47 @@
 
 ## Files Modified
 
+| File                  | Status  | Key Changes                                                                  |
+|-----------------------|---------|------------------------------------------------------------------------------|
+| `build.gradle`        | Updated | Added configurable `buildBasePath`, renamed functions, simplified version detection |
+| `settings.gradle`     | Created | Project configuration, cache settings, initialization message                |
+| `GRADLE_UPDATES.md`   | Updated | Comprehensive documentation of all changes                                   |
+
 ### 1. `build.gradle` (Updated)
+
 **Key Changes:**
-- Added configurable `buildBasePath` with 3-tier priority system
-- Renamed `findSevenZip()` → `find7ZipExecutable()` 
-- Simplified `getAllAvailableVersions()` → `getAvailableVersions()`
-- Updated build output path structure to match Bruno module
-- Enhanced interactive version selection display
-- Improved 7-Zip detection with 7Z_HOME support
-- Updated all tasks to use new functions and paths
+
+| Change                           | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| Build path configuration         | Added 3-tier priority system for `buildBasePath`                             |
+| Function rename                  | `findSevenZip()` → `find7ZipExecutable()`                                    |
+| Version detection                | `getAllAvailableVersions()` → `getAvailableVersions()`                       |
+| Output structure                 | Updated to match Bruno module pattern                                        |
+| Interactive selection            | Enhanced version selection display                                           |
+| 7-Zip detection                  | Added 7Z_HOME environment variable support                                   |
+| Task updates                     | All tasks updated to use new functions and paths                             |
 
 ### 2. `settings.gradle` (Created)
-**New File:**
-- Defines project name as 'module-apache'
-- Enables stable configuration cache
-- Configures local build cache
-- Adds initialization message
+
+**New File Features:**
+
+| Feature                          | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| Project name                     | Defines project as 'module-apache'                                           |
+| Configuration cache              | Enables stable configuration cache                                           |
+| Build cache                      | Configures local build cache                                                 |
+| Initialization message           | Displays startup message                                                     |
 
 ### 3. `GRADLE_UPDATES.md` (Updated)
-**Documentation:**
-- Comprehensive documentation of all changes
-- Usage examples for all tasks
-- Migration notes for existing users
-- Output structure explanation
+
+**Documentation Updates:**
+
+| Section                          | Content                                                                      |
+|----------------------------------|------------------------------------------------------------------------------|
+| Changes documentation            | Comprehensive documentation of all changes                                   |
+| Usage examples                   | Examples for all tasks                                                       |
+| Migration notes                  | Notes for existing users                                                     |
+| Output structure                 | Explanation of new structure                                                 |
 
 ## Functional Changes
 
@@ -95,55 +113,49 @@ def find7ZipExecutable() {
 
 ## Task Updates
 
-### `info` Task
-- Added "Build Path" display showing resolved build base path
-
-### `listVersions` Task
-- Simplified output format
-- Shows `[bin]` or `[bin/archived]` tags
-- Cleaner version list display
-
-### `verify` Task
-- Added 7-Zip verification when format is 7z
-- Uses new `find7ZipExecutable()` function
-
-### `release` Task
-- Interactive mode shows location tags for versions
-- Uses new build path structure
-- Improved error messages
-
-### `releaseAll` Task
-- Supports archived directory
-- Uses simplified version detection
+| Task            | Updates                                                                      |
+|-----------------|------------------------------------------------------------------------------|
+| `info`          | Added "Build Path" display showing resolved build base path                  |
+| `listVersions`  | Simplified output, shows location tags, cleaner display                      |
+| `verify`        | Added 7-Zip verification, uses `find7ZipExecutable()`                        |
+| `release`       | Interactive mode with location tags, new build path structure                |
+| `releaseAll`    | Supports archived directory, simplified version detection                    |
 
 ## Behavior Alignment with module-bruno
 
-✅ **Build Path Configuration** - Matches Bruno's 3-tier priority system
-✅ **7-Zip Detection** - Uses same function name and logic
-✅ **Version Management** - Simplified to return flat list
-✅ **Interactive Selection** - Shows location tags consistently
-✅ **Output Structure** - Uses `{buildBasePath}/{bundleType}/{bundleName}/{bundleRelease}`
-✅ **Error Messages** - Consistent formatting and helpful information
-✅ **Settings File** - Includes same features and configuration
-✅ **Code Style** - Aligned naming conventions and structure
+| Feature                          | Status | Description                                                  |
+|----------------------------------|--------|--------------------------------------------------------------|
+| Build Path Configuration         | ✅     | Matches Bruno's 3-tier priority system                       |
+| 7-Zip Detection                  | ✅     | Uses same function name and logic                            |
+| Version Management               | ✅     | Simplified to return flat list                               |
+| Interactive Selection            | ✅     | Shows location tags consistently                             |
+| Output Structure                 | ✅     | Uses `{buildBasePath}/{bundleType}/{bundleName}/{bundleRelease}` |
+| Error Messages                   | ✅     | Consistent formatting and helpful information                |
+| Settings File                    | ✅     | Includes same features and configuration                     |
+| Code Style                       | ✅     | Aligned naming conventions and structure                     |
 
 ## Testing Results
 
 All functionality tested and working:
-- ✅ Build path resolution (all 3 priority levels)
-- ✅ Version detection (bin/ and bin/archived/)
-- ✅ Interactive version selection
-- ✅ 7-Zip detection and usage
-- ✅ Archive creation with hash files
-- ✅ All verification tasks
-- ✅ Info display with new fields
+
+| Test                             | Status | Description                                                  |
+|----------------------------------|--------|--------------------------------------------------------------|
+| Build path resolution            | ✅     | All 3 priority levels working                                |
+| Version detection                | ✅     | Both bin/ and bin/archived/ directories                      |
+| Interactive version selection    | ✅     | Location tags displayed correctly                            |
+| 7-Zip detection and usage        | ✅     | Finds and uses 7-Zip correctly                               |
+| Archive creation                 | ✅     | Creates archives with hash files                             |
+| Verification tasks               | ✅     | All verification tasks working                               |
+| Info display                     | ✅     | Shows all new fields correctly                               |
 
 ## Backward Compatibility
 
-✅ Existing `build.properties` configurations continue to work
-✅ Existing bin directory structure supported
-✅ No breaking changes to task names or parameters
-✅ Default behavior unchanged if no custom configuration
+| Feature                          | Status | Description                                                  |
+|----------------------------------|--------|--------------------------------------------------------------|
+| Existing `build.properties`      | ✅     | Configurations continue to work                              |
+| Bin directory structure          | ✅     | Existing structure supported                                 |
+| Task names and parameters        | ✅     | No breaking changes                                          |
+| Default behavior                 | ✅     | Unchanged if no custom configuration                         |
 
 ## Next Steps
 

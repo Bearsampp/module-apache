@@ -6,59 +6,63 @@ Updated the Gradle build configuration to match the behavior and functions from 
 ## Changes Made
 
 ### 1. Build Path Configuration
-- **Added configurable build base path** with priority system:
-  1. `build.path` property in `build.properties`
-  2. `BEARSAMPP_BUILD_PATH` environment variable
-  3. Default: `${rootDir}/../bearsampp-build`
-- **Updated output structure** to: `{buildBasePath}/{bundleType}/{bundleName}/{bundleRelease}`
-  - Example: `bearsampp-build/bins/apache/2025.8.15/`
+
+**Added configurable build base path** with priority system:
+
+| Priority | Source                                    | Example                                      |
+|----------|-------------------------------------------|----------------------------------------------|
+| 1        | `build.path` in `build.properties`        | `build.path = C:/Bearsampp-build`            |
+| 2        | `BEARSAMPP_BUILD_PATH` environment var    | `set BEARSAMPP_BUILD_PATH=C:/Bearsampp-build`|
+| 3        | Default                                   | `${rootDir}/bearsampp-build`                 |
+
+**Updated output structure** to: `{buildBasePath}/{bundleType}/{bundleName}/{bundleRelease}`
+
+- Example: `bearsampp-build/bins/apache/2025.8.15/`
 
 ### 2. 7-Zip Executable Detection
-- **Renamed function** from `findSevenZip()` to `find7ZipExecutable()` for consistency
-- **Added 7Z_HOME environment variable support** for custom 7-Zip locations
-- **Expanded search paths** to include D: drive installations
-- **Improved error messages** to mention 7Z_HOME environment variable
+
+**Improvements:**
+
+| Feature                          | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| Function rename                  | `findSevenZip()` → `find7ZipExecutable()` for consistency                    |
+| 7Z_HOME support                  | Environment variable for custom 7-Zip locations                              |
+| Expanded search paths            | Includes D: drive installations                                              |
+| Improved error messages          | Mentions 7Z_HOME environment variable                                        |
 
 ### 3. Version Management
-- **Simplified version listing** with `getAvailableVersions()` function
-  - Returns flat list of version strings
-  - Automatically checks both `bin/` and `bin/archived/` directories
-  - Removes duplicates and sorts versions
-- **Enhanced interactive version selection**
-  - Shows location tags `[bin]` or `[bin/archived]` for each version
-  - Improved formatting with proper padding
-  - Better error messages for invalid selections
+
+**Simplified version listing** with `getAvailableVersions()` function:
+
+| Feature                          | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| Return type                      | Flat list of version strings                                                 |
+| Directory scanning               | Automatically checks `bin/` and `bin/archived/`                              |
+| Deduplication                    | Removes duplicates and sorts versions                                        |
+| Location tags                    | Shows `[bin]` or `[bin/archived]` for each version                           |
+| Formatting                       | Improved with proper padding                                                 |
+| Error messages                   | Better messages for invalid selections                                       |
 
 ### 4. Task Improvements
 
-#### `info` Task
-- Added `Build Path` to the displayed information
-- Shows the resolved build base path being used
-
-#### `listVersions` Task
-- Simplified output format
-- Shows location tag for each version
-- Cleaner display with consistent formatting
-
-#### `verify` Task
-- Added 7-Zip check when `bundle.format = 7z`
-- Uses the new `find7ZipExecutable()` function
-
-#### `release` Task
-- Updated to use new build path structure
-- Improved version selection display
-- Better error messages with available versions list
-
-#### `releaseAll` Task
-- Updated to support `bin/archived/` directory
-- Uses simplified `getAvailableVersions()` function
+| Task            | Improvements                                                                 |
+|-----------------|------------------------------------------------------------------------------|
+| `info`          | Added `Build Path` display showing resolved build base path                  |
+| `listVersions`  | Simplified output, shows location tags, cleaner formatting                   |
+| `verify`        | Added 7-Zip check when `bundle.format = 7z`                                  |
+| `release`       | Updated build path structure, improved version selection                     |
+| `releaseAll`    | Supports `bin/archived/` directory, uses simplified version detection        |
 
 ### 5. Settings File
-- **Created `settings.gradle`** with:
-  - Project name configuration
-  - Stable configuration cache feature preview
-  - Local build cache configuration
-  - Initialization message display
+
+**Created `settings.gradle`** with:
+
+| Feature                          | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| Project name                     | Configured as 'module-apache'                                                |
+| Configuration cache              | Enabled stable configuration cache feature                                   |
+| Build cache                      | Configured local build cache                                                 |
+| Initialization message           | Displays startup message                                                     |
 
 ### 6. Code Consistency
 - Aligned function names with Bruno module conventions
@@ -69,19 +73,14 @@ Updated the Gradle build configuration to match the behavior and functions from 
 ## New Features
 
 ### Configurable Build Path
+
 You can now configure the build output path in three ways:
 
-1. **In build.properties:**
-   ```properties
-   build.path = C:/Bearsampp-build
-   ```
-
-2. **Environment variable:**
-   ```bash
-   set BEARSAMPP_BUILD_PATH=C:/Bearsampp-build
-   ```
-
-3. **Default:** Uses `../bearsampp-build` relative to project root
+| Priority | Method                          | Example                                                      |
+|----------|---------------------------------|--------------------------------------------------------------|
+| 1        | In `build.properties`           | `build.path = C:/Bearsampp-build`                            |
+| 2        | Environment variable            | `set BEARSAMPP_BUILD_PATH=C:/Bearsampp-build`                |
+| 3        | Default                         | Uses `../bearsampp-build` relative to project root           |
 
 ### Archived Versions Support
 The build system now automatically detects and supports versions in both:
@@ -98,35 +97,15 @@ set 7Z_HOME=D:\Tools\7-Zip
 
 ## Usage Examples
 
-### List all available versions
-```bash
-gradle listVersions
-```
-
-### Build a specific version
-```bash
-gradle release -PbundleVersion=2.4.62
-```
-
-### Interactive build (prompts for version)
-```bash
-gradle release
-```
-
-### Build all versions
-```bash
-gradle releaseAll
-```
-
-### Verify build environment
-```bash
-gradle verify
-```
-
-### Display build information
-```bash
-gradle info
-```
+| Task                                      | Command                                      | Description                                  |
+|-------------------------------------------|----------------------------------------------|----------------------------------------------|
+| List all available versions               | `gradle listVersions`                        | Shows versions in bin/ and bin/archived/     |
+| Build a specific version                  | `gradle release -PbundleVersion=2.4.62`      | Builds specified Apache version              |
+| Interactive build                         | `gradle release`                             | Prompts for version selection                |
+| Build all versions                        | `gradle releaseAll`                          | Builds all available versions                |
+| Verify build environment                  | `gradle verify`                              | Checks prerequisites and configuration       |
+| Display build information                 | `gradle info`                                | Shows build configuration details            |
+| Clean build artifacts                     | `gradle clean`                               | Removes build artifacts                      |
 
 ## Output Structure
 
@@ -150,20 +129,25 @@ bearsampp-build/
 
 ## Compatibility
 
-- Fully compatible with existing `build.properties` configuration
-- Backward compatible with existing bin directory structure
-- Works with both current and archived version directories
-- Supports both 7z and zip archive formats
+| Feature                          | Status                                                                      |
+|----------------------------------|-----------------------------------------------------------------------------|
+| Existing `build.properties`      | ✅ Fully compatible                                                         |
+| Bin directory structure          | ✅ Backward compatible                                                      |
+| Archived versions                | ✅ Supports both current and archived directories                           |
+| Archive formats                  | ✅ Supports both 7z and zip formats                                         |
 
 ## Testing
 
 All tasks have been tested and verified:
-- ✅ `gradle info` - Displays build information correctly
-- ✅ `gradle listVersions` - Lists all versions from bin/ and bin/archived/
-- ✅ `gradle verify` - Checks environment including 7-Zip
-- ✅ Build path resolution works with all three priority levels
-- ✅ Interactive version selection displays location tags
-- ✅ Archive creation follows new path structure
+
+| Test                             | Status | Description                                                  |
+|----------------------------------|--------|--------------------------------------------------------------|
+| `gradle info`                    | ✅     | Displays build information correctly                         |
+| `gradle listVersions`            | ✅     | Lists all versions from bin/ and bin/archived/               |
+| `gradle verify`                  | ✅     | Checks environment including 7-Zip                           |
+| Build path resolution            | ✅     | Works with all three priority levels                         |
+| Interactive version selection    | ✅     | Displays location tags correctly                             |
+| Archive creation                 | ✅     | Follows new path structure                                   |
 
 ## Migration Notes
 

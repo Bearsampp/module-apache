@@ -14,9 +14,11 @@ https://raw.githubusercontent.com/Bearsampp/modules-untouched/main/modules/apach
 
 When building an Apache version, the system follows this priority order:
 
-1. **Local releases.properties** - Check the local `releases.properties` file first
-2. **Remote apache.properties** - If not found locally, fetch from modules-untouched repository
-3. **Direct repository download** - If not in properties files, try to download directly from `apache{version}/` directory in modules-untouched
+| Priority | Source                                    | Description                                                  |
+|----------|-------------------------------------------|--------------------------------------------------------------|
+| 1        | Local `releases.properties`               | Check the local file first                                   |
+| 2        | Remote `apache.properties`                | Fetch from modules-untouched repository                      |
+| 3        | Direct repository download                | Download from `apache{version}/` directory                   |
 
 ## How It Works
 
@@ -74,10 +76,12 @@ if (!downloadUrl) {
 
 ## Benefits
 
-1. **Automatic Version Discovery** - No need to manually update `releases.properties` for every new version
-2. **Centralized Version Management** - All versions maintained in one place (modules-untouched)
-3. **Fallback Support** - Multiple fallback mechanisms ensure builds can proceed
-4. **Network Resilience** - Graceful handling of network errors with clear error messages
+| Benefit                          | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| Automatic Version Discovery      | No need to manually update `releases.properties` for every new version       |
+| Centralized Version Management   | All versions maintained in one place (modules-untouched)                     |
+| Fallback Support                 | Multiple fallback mechanisms ensure builds can proceed                       |
+| Network Resilience               | Graceful handling of network errors with clear error messages                |
 
 ## Usage Example
 
@@ -134,8 +138,11 @@ No additional configuration is required. The feature works automatically when bu
 ### Timeout Settings
 
 The remote properties loader uses these timeout settings:
-- **Connect Timeout:** 10 seconds
-- **Read Timeout:** 10 seconds
+
+| Setting                          | Value                                                                        |
+|----------------------------------|------------------------------------------------------------------------------|
+| Connect Timeout                  | 10 seconds                                                                   |
+| Read Timeout                     | 10 seconds                                                                   |
 
 These can be adjusted in the `loadRemoteApacheProperties()` function if needed.
 
@@ -143,21 +150,11 @@ These can be adjusted in the `loadRemoteApacheProperties()` function if needed.
 
 To test the remote properties support:
 
-1. **Test with existing version:**
-   ```bash
-   gradle release -PbundleVersion=2.4.62
-   ```
-   Should use local releases.properties
-
-2. **Test with version only in remote:**
-   - Remove a version from local releases.properties
-   - Build that version
-   - Should fetch from remote apache.properties
-
-3. **Test network error handling:**
-   - Disconnect network
-   - Try to build a version not in local releases.properties
-   - Should show appropriate error message
+| Test                             | Steps                                                                        | Expected Result                              |
+|----------------------------------|------------------------------------------------------------------------------|----------------------------------------------|
+| Test with existing version       | `gradle release -PbundleVersion=2.4.62`                                      | Should use local releases.properties         |
+| Test with version only in remote | Remove version from local, build that version                                | Should fetch from remote apache.properties   |
+| Test network error handling      | Disconnect network, build version not in local                               | Should show appropriate error message        |
 
 ## Maintenance
 
@@ -165,30 +162,40 @@ To test the remote properties support:
 
 To add a new Apache version:
 
-**Option 1: Add to remote apache.properties (Recommended)**
+| Option | Method                                    | Steps                                                        | Scope        |
+|--------|-------------------------------------------|--------------------------------------------------------------|--------------|
+| 1      | Add to remote apache.properties (Recommended) | Edit `modules/apache.properties`, add version, commit    | All builds   |
+| 2      | Add to local releases.properties          | Edit local file, add version line                            | Local only   |
+| 3      | Upload to modules-untouched repository    | Create `apache2.4.XX/` directory, upload binaries            | All builds   |
+
+**Option 1 Details (Recommended):**
 1. Edit `modules/apache.properties` in modules-untouched repository
 2. Add line: `2.4.XX = https://download-url-here`
 3. Commit and push
 4. Version is now available to all builds
 
-**Option 2: Add to local releases.properties**
+**Option 2 Details:**
 1. Edit local `releases.properties`
 2. Add line: `2.4.XX = https://download-url-here`
 3. Version is available for local builds only
 
-**Option 3: Upload to modules-untouched repository**
+**Option 3 Details:**
 1. Create directory: `apache2.4.XX/`
 2. Upload Apache binaries
 3. Version can be auto-discovered
 
 ## Related Files
 
-- `build.gradle` - Contains the implementation
-- `releases.properties` - Local version definitions
-- Remote: `https://github.com/Bearsampp/modules-untouched/blob/main/modules/apache.properties`
+| File/Resource                    | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| `build.gradle`                   | Contains the implementation                                                  |
+| `releases.properties`            | Local version definitions                                                    |
+| Remote apache.properties         | https://github.com/Bearsampp/modules-untouched/blob/main/modules/apache.properties |
 
 ## See Also
 
-- [GRADLE_UPDATES.md](GRADLE_UPDATES.md) - General Gradle updates
-- [CHANGES_SUMMARY.md](CHANGES_SUMMARY.md) - Summary of all changes
-- [modules-untouched repository](https://github.com/Bearsampp/modules-untouched)
+| Document                         | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| [GRADLE_UPDATES.md](GRADLE_UPDATES.md) | General Gradle updates                                                 |
+| [CHANGES_SUMMARY.md](CHANGES_SUMMARY.md) | Summary of all changes                                               |
+| [modules-untouched repository](https://github.com/Bearsampp/modules-untouched) | Source repository                    |

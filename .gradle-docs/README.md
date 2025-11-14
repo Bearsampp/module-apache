@@ -4,8 +4,19 @@ This directory contains all Gradle-related documentation for the module-apache p
 
 ## Documentation Files
 
+| Document                                                          | Description                                                                  |
+|-------------------------------------------------------------------|------------------------------------------------------------------------------|
+| [GRADLE_UPDATES.md](GRADLE_UPDATES.md)                            | Comprehensive documentation of all Gradle build updates                      |
+| [CHANGES_SUMMARY.md](CHANGES_SUMMARY.md)                          | Summary of all changes made to the Gradle build configuration                |
+| [GRADLE_TMP_PATHS.md](GRADLE_TMP_PATHS.md)                        | Documentation about the Gradle build temporary paths                         |
+| [CHANGES_TMP_PATHS.md](CHANGES_TMP_PATHS.md)                      | Changes related to the Gradle temporary paths update                         |
+| [REMOTE_PROPERTIES_SUPPORT.md](REMOTE_PROPERTIES_SUPPORT.md)      | Documentation for remote apache.properties support                           |
+| [CHANGELOG.md](CHANGELOG.md)                                      | Complete changelog of all Gradle build updates                               |
+
 ### GRADLE_UPDATES.md
+
 Comprehensive documentation of all Gradle build updates, including:
+
 - Build path configuration
 - 7-Zip executable detection
 - Version management
@@ -13,7 +24,9 @@ Comprehensive documentation of all Gradle build updates, including:
 - Usage examples
 
 ### CHANGES_SUMMARY.md
+
 Summary of all changes made to the Gradle build configuration:
+
 - Files modified
 - Functional changes
 - Task updates
@@ -21,7 +34,9 @@ Summary of all changes made to the Gradle build configuration:
 - Testing results
 
 ### GRADLE_TMP_PATHS.md
+
 Documentation about the Gradle build temporary paths:
+
 - Path structure comparison with Ant builds
 - Path definitions and purposes
 - How the build process works
@@ -29,18 +44,31 @@ Documentation about the Gradle build temporary paths:
 - Configuration options
 
 ### CHANGES_TMP_PATHS.md
+
 Changes related to the Gradle temporary paths update:
+
 - Path configuration changes
 - Directory structure before/after
 - Benefits of the new structure
 - Verification steps
 
 ### REMOTE_PROPERTIES_SUPPORT.md
+
 Documentation for remote apache.properties support:
+
 - How the remote properties loading works
 - Version resolution priority
 - Usage examples and error handling
 - Configuration and maintenance
+
+### CHANGELOG.md
+
+Complete changelog of all Gradle build updates:
+
+- Version history
+- Feature additions
+- Bug fixes
+- Breaking changes
 
 ## Recent Updates
 
@@ -60,10 +88,14 @@ All Gradle-related documentation has been moved to `/.gradle-docs` to keep the p
 
 ## Quick Links
 
-- [Gradle Updates](GRADLE_UPDATES.md) - Full changelog and feature documentation
-- [Changes Summary](CHANGES_SUMMARY.md) - Quick overview of changes
-- [Tmp Paths Documentation](GRADLE_TMP_PATHS.md) - Build path structure details
-- [Tmp Paths Changes](CHANGES_TMP_PATHS.md) - Path configuration updates
+| Link                                                             | Description                                                                  |
+|------------------------------------------------------------------|------------------------------------------------------------------------------|
+| [Gradle Updates](GRADLE_UPDATES.md)                              | Full changelog and feature documentation                                     |
+| [Changes Summary](CHANGES_SUMMARY.md)                            | Quick overview of changes                                                    |
+| [Tmp Paths Documentation](GRADLE_TMP_PATHS.md)                   | Build path structure details                                                 |
+| [Tmp Paths Changes](CHANGES_TMP_PATHS.md)                        | Path configuration updates                                                   |
+| [Remote Properties Support](REMOTE_PROPERTIES_SUPPORT.md)        | Remote version discovery documentation                                       |
+| [Changelog](CHANGELOG.md)                                        | Complete version history                                                     |
 
 ## Usage
 
