@@ -819,6 +819,20 @@ tasks.register('release') {
         }
 
         println ""
+        println "Copying to bundles_build directory..."
+        def apacheBuildPath = file("${bundleTmpBuildPath}/${bundleName}${bundleVersion}")
+        if (apacheBuildPath.exists()) {
+            delete apacheBuildPath
+        }
+        apacheBuildPath.mkdirs()
+
+        copy {
+            from apachePrepPath
+            into apacheBuildPath
+        }
+        println "Non-zip version available at: ${apacheBuildPath}"
+
+        println ""
         println "Preparing archive..."
 
         // Determine build output path following Bruno pattern
