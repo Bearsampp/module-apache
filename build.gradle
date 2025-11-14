@@ -44,15 +44,15 @@ ext {
     def buildPathFromProps = buildProps.getProperty('build.path', '').trim()
     def buildPathFromEnv = System.getenv('BEARSAMPP_BUILD_PATH') ?: ''
     def defaultBuildPath = "${rootDir}/bearsampp-build"
-    
+
     buildBasePath = buildPathFromProps ?: (buildPathFromEnv ?: defaultBuildPath)
-    
+
     // Use shared bearsampp-build/tmp directory structure (same as Ant builds)
     buildTmpPath = file("${buildBasePath}/tmp").absolutePath
     bundleTmpBuildPath = file("${buildTmpPath}/bundles_build/${bundleType}/${bundleName}").absolutePath
     bundleTmpPrepPath = file("${buildTmpPath}/bundles_prep/${bundleType}/${bundleName}").absolutePath
     bundleTmpSrcPath = file("${buildTmpPath}/bundles_src").absolutePath
-    
+
     // Download and extract paths - use bearsampp-build/tmp instead of local build/
     bundleTmpDownloadPath = file("${buildTmpPath}/downloads/${bundleName}").absolutePath
     bundleTmpExtractPath = file("${buildTmpPath}/extract/${bundleName}").absolutePath
@@ -75,10 +75,10 @@ repositories {
 // Function to download from modules-untouched GitHub repository
 def downloadFromModulesUntouched(String version) {
     println "Checking modules-untouched repository on GitHub..."
-    
+
     // GitHub raw content URL for modules-untouched (using main branch)
     def githubBaseUrl = "https://github.com/Bearsampp/modules-untouched/raw/main/apache${version}"
-    
+
     // Try to detect the archive file by checking common patterns
     def possibleArchives = [
         "bearsampp-apache-${version}.7z",
@@ -88,27 +88,27 @@ def downloadFromModulesUntouched(String version) {
         "apache-${version}.zip",
         "apache${version}.zip"
     ]
-    
+
     def downloadDir = file(bundleTmpDownloadPath)
     def extractDir = file(bundleTmpExtractPath)
     downloadDir.mkdirs()
     extractDir.mkdirs()
-    
+
     def downloadedFile = null
     def archiveUrl = null
-    
+
     // Try to find which archive exists
     for (archiveName in possibleArchives) {
         def testUrl = "${githubBaseUrl}/${archiveName}"
         println "  Checking: ${testUrl}"
-        
+
         try {
             // Test if URL exists by attempting a HEAD request
             def connection = new URL(testUrl).openConnection()
             connection.setRequestMethod("HEAD")
             connection.setConnectTimeout(5000)
             connection.setReadTimeout(5000)
-            
+
             def responseCode = connection.getResponseCode()
             if (responseCode == 200) {
                 archiveUrl = testUrl
@@ -120,17 +120,22 @@ def downloadFromModulesUntouched(String version) {
             // URL doesn't exist, try next
         }
     }
-    
+
     if (!archiveUrl) {
         println "  Apache ${version} not found in modules-untouched repository"
         return null
     }
-    
+
     // Download the archive if not already cached
     if (!downloadedFile.exists()) {
         println "  Downloading from modules-untouched: ${archiveUrl}"
         try {
-            ant.get(src: archiveUrl, dest: downloadedFile, verbose: true)
+            // Use native Gradle download instead of Ant
+            new URL(archiveUrl).withInputStream { input ->
+                downloadedFile.withOutputStream { output ->
+                    output << input
+                }
+            }
             println "  Download complete"
         } catch (Exception e) {
             println "  Download failed: ${e.message}"
@@ -139,7 +144,7 @@ def downloadFromModulesUntouched(String version) {
     } else {
         println "  Using cached file: ${downloadedFile.name}"
     }
-    
+
     // Extract the archive
     println "  Extracting archive..."
     def extractPath = file("${extractDir}/modules-untouched-${version}")
@@ -147,9 +152,9 @@ def downloadFromModulesUntouched(String version) {
         delete extractPath
     }
     extractPath.mkdirs()
-    
+
     def filename = downloadedFile.name
-    
+
     // Use 7zip or built-in extraction
     if (filename.endsWith('.7z')) {
         def sevenZipPath = find7ZipExecutable()
@@ -166,11 +171,11 @@ def downloadFromModulesUntouched(String version) {
                 .directory(extractPath)
                 .redirectErrorStream(true)
                 .start()
-            
+
             process.inputStream.eachLine { line ->
                 println "    ${line}"
             }
-            
+
             def exitCode = process.waitFor()
             if (exitCode != 0) {
                 println "  7zip extraction failed"
@@ -189,37 +194,37 @@ def downloadFromModulesUntouched(String version) {
         println "  Unsupported archive format: ${filename}"
         return null
     }
-    
+
     println "  Extraction complete"
-    
+
     // Find the Apache directory in the extracted files
     def apacheDir = findApacheDirectory(extractPath)
     if (!apacheDir) {
         println "  Could not find Apache directory in extracted files"
         return null
     }
-    
+
     println "  Found Apache directory: ${apacheDir.name}"
     println "  Apache ${version} from modules-untouched ready at: ${apacheDir.absolutePath}"
-    
+
     return apacheDir
 }
 
 // Function to load remote apache.properties from modules-untouched
 def loadRemoteApacheProperties() {
     def remoteUrl = "https://raw.githubusercontent.com/Bearsampp/modules-untouched/main/modules/apache.properties"
-    
+
     try {
         println "Loading remote apache.properties from modules-untouched..."
         def connection = new URL(remoteUrl).openConnection()
         connection.setConnectTimeout(10000)
         connection.setReadTimeout(10000)
-        
+
         def remoteProps = new Properties()
         connection.inputStream.withStream { stream ->
             remoteProps.load(stream)
         }
-        
+
         println "  Loaded ${remoteProps.size()} versions from remote apache.properties"
         return remoteProps
     } catch (Exception e) {
@@ -244,26 +249,26 @@ def downloadAndExtractApache(String version, File destDir) {
         // Check remote apache.properties from modules-untouched
         println "Version ${version} not found in releases.properties"
         println "Checking remote apache.properties from modules-untouched..."
-        
+
         def remoteProps = loadRemoteApacheProperties()
         downloadUrl = remoteProps.getProperty(version)
-        
+
         if (downloadUrl) {
             println "  Found version ${version} in remote apache.properties"
             println "  URL: ${downloadUrl}"
         } else {
             // Check modules-untouched GitHub repository as fallback
             println "Version ${version} not found in remote apache.properties"
-            
+
             def untouchedDir = downloadFromModulesUntouched(version)
             if (untouchedDir) {
                 println "Using Apache ${version} from modules-untouched repository"
                 return untouchedDir
             }
-            
+
             throw new GradleException("""
                 Version ${version} not found in releases.properties, remote apache.properties, or modules-untouched repository.
-                
+
                 Please either:
                 1. Add the version to releases.properties with a download URL
                 2. Add the version to https://github.com/Bearsampp/modules-untouched/blob/main/modules/apache.properties
@@ -287,7 +292,12 @@ def downloadAndExtractApache(String version, File destDir) {
     // Download if not already present
     if (!downloadedFile.exists()) {
         println "  Downloading to: ${downloadedFile}"
-        ant.get(src: downloadUrl, dest: downloadedFile, verbose: true)
+        // Use native Gradle download instead of Ant
+        new URL(downloadUrl).withInputStream { input ->
+            downloadedFile.withOutputStream { output ->
+                output << input
+            }
+        }
         println "  Download complete"
     } else {
         println "  Using cached file: ${downloadedFile}"
@@ -437,7 +447,7 @@ def findApacheDirectory(File extractPath) {
 // Helper function to get available versions
 def getAvailableVersions() {
     def versions = []
-    
+
     // Check bin directory
     def binDir = file("${projectDir}/bin")
     if (binDir.exists()) {
@@ -446,7 +456,7 @@ def getAvailableVersions() {
             ?.collect { it.name.replace(bundleName, '') } ?: []
         versions.addAll(binVersions)
     }
-    
+
     // Check bin/archived subdirectory
     def archivedDir = file("${projectDir}/bin/archived")
     if (archivedDir.exists()) {
@@ -455,7 +465,7 @@ def getAvailableVersions() {
             ?.collect { it.name.replace(bundleName, '') } ?: []
         versions.addAll(archivedVersions)
     }
-    
+
     // Remove duplicates and sort
     return versions.unique().sort()
 }
@@ -568,11 +578,11 @@ tasks.register('release') {
             println "=".multiply(70)
             println "Available ${bundleName} versions:"
             println "=".multiply(70)
-            
+
             // Show versions with location tags
             def binDir = file("${projectDir}/bin")
             def archivedDir = file("${projectDir}/bin/archived")
-            
+
             versions.eachWithIndex { version, index ->
                 def location = ""
                 if (binDir.exists() && file("${binDir}/${bundleName}${version}").exists()) {
@@ -635,15 +645,15 @@ tasks.register('release') {
 
         // Check both bin/ and bin/archived/ directories
         def bundlePath = file("${projectDir}/bin/${bundleName}${versionToBuild}")
-        
+
         if (!bundlePath.exists()) {
             bundlePath = file("${projectDir}/bin/archived/${bundleName}${versionToBuild}")
         }
 
         if (!bundlePath.exists()) {
             def allVersions = getAvailableVersions()
-            def availableVersionsList = allVersions.collect { 
-                "  - ${it}" 
+            def availableVersionsList = allVersions.collect {
+                "  - ${it}"
             }.join('\n') ?: "  (none found)"
 
             throw new GradleException("""
@@ -673,7 +683,7 @@ tasks.register('release') {
             // Apache binaries not found in bin/ - check modules-untouched repository first
             println ""
             println "Apache binaries not found in bin/ directory"
-            
+
             // Check modules-untouched GitHub repository
             def untouchedDir = downloadFromModulesUntouched(bundleVersion)
             if (untouchedDir) {
@@ -876,7 +886,12 @@ tasks.register('release') {
 
             println "Compressing ${bundleName}${bundleVersion} to ${archiveFile.name}..."
 
-            ant.zip(destfile: archiveFile, basedir: apachePrepPath)
+            // Use native Gradle zip task instead of Ant
+            task("zipArchive_${bundleVersion}", type: Zip) {
+                from apachePrepPath
+                destinationDirectory = archiveFile.parentFile
+                archiveFileName = archiveFile.name
+            }.execute()
 
             println "Archive created: ${archiveFile}"
 
@@ -1243,11 +1258,11 @@ tasks.register('listVersions') {
 
         println "\nAvailable ${bundleName} versions:"
         println "-".multiply(60)
-        
+
         // Show which directory each version is in
         def binDir = file("${projectDir}/bin")
         def archivedDir = file("${projectDir}/bin/archived")
-        
+
         versions.each { version ->
             def location = ""
             if (binDir.exists() && file("${binDir}/${bundleName}${version}").exists()) {
