@@ -1,5 +1,69 @@
 # Gradle Build Changelog
 
+## 2025-01-XX - Removal of releases.properties
+
+### Removed
+
+| Component                        | Reason                                                                       |
+|----------------------------------|------------------------------------------------------------------------------|
+| `releases.properties`            | Replaced by centralized modules-untouched apache.properties                  |
+
+### Changed
+
+| Component                        | Change                                                                       |
+|----------------------------------|------------------------------------------------------------------------------|
+| Version Resolution               | Now uses only remote apache.properties (no local fallback)                   |
+| `fetchModulesUntouchedProperties()` | Primary version source (was secondary)                                    |
+| `downloadFromModulesUntouched()` | Enhanced to check remote properties first                                    |
+| `listReleases` task              | Now fetches from modules-untouched instead of local file                     |
+| Documentation                    | Updated to reflect removal of releases.properties                            |
+
+### Version Resolution Strategy (Updated)
+
+| Priority | Source                                    | Description                                  |
+|----------|-------------------------------------------|----------------------------------------------|
+| 1        | Remote `apache.properties`                | Fetch from modules-untouched (PRIMARY)       |
+| 2        | Direct repository download                | Download from `apache{version}/` directory   |
+
+**Note:** Local `releases.properties` is no longer used.
+
+### Benefits
+
+| Benefit                          | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| Centralized Management           | Single source of truth for all Apache versions                               |
+| No Local Maintenance             | No need to maintain local releases.properties file                           |
+| Consistency                      | Matches module-bruno and other Bearsampp modules                             |
+| Always Current                   | Automatically uses latest version information                                |
+| Simplified Workflow              | One less file to maintain and keep in sync                                   |
+
+### Migration Notes
+
+- **No action required** for existing builds
+- Version information now fetched dynamically from modules-untouched
+- All previously available versions remain accessible
+- New versions automatically available when added to remote apache.properties
+
+### Files Modified
+
+| File/Directory                   | Action  | Description                                                  |
+|----------------------------------|---------|--------------------------------------------------------------|
+| `releases.properties`            | Deleted | No longer needed                                             |
+| `build.gradle`                   | Updated | Removed references to releases.properties                    |
+| `/.gradle-docs/REMOTE_PROPERTIES_SUPPORT.md` | Updated | Reflects removal of releases.properties          |
+| `/.gradle-docs/CHANGELOG.md`     | Updated | This changelog entry                                         |
+
+### Testing
+
+| Test                             | Status | Description                                                  |
+|----------------------------------|--------|--------------------------------------------------------------|
+| Build with remote version        | ✅     | Successfully fetches from modules-untouched                  |
+| Build without network            | ✅     | Shows appropriate error message                              |
+| `listReleases` task              | ✅     | Displays versions from remote apache.properties              |
+| `checkModulesUntouched` task     | ✅     | Verifies integration with modules-untouched                  |
+
+---
+
 ## 2024-11-12 - Remote Properties Support & Documentation Organization
 
 ### Added

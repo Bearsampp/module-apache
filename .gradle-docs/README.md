@@ -11,6 +11,7 @@ This directory contains all Gradle-related documentation for the module-apache p
 | [GRADLE_TMP_PATHS.md](GRADLE_TMP_PATHS.md)                        | Documentation about the Gradle build temporary paths                         |
 | [CHANGES_TMP_PATHS.md](CHANGES_TMP_PATHS.md)                      | Changes related to the Gradle temporary paths update                         |
 | [REMOTE_PROPERTIES_SUPPORT.md](REMOTE_PROPERTIES_SUPPORT.md)      | Documentation for remote apache.properties support                           |
+| [MODULES_UNTOUCHED_INTEGRATION.md](MODULES_UNTOUCHED_INTEGRATION.md) | Complete guide to modules-untouched integration                           |
 | [CHANGELOG.md](CHANGELOG.md)                                      | Complete changelog of all Gradle build updates                               |
 
 ### GRADLE_UPDATES.md
@@ -61,6 +62,16 @@ Documentation for remote apache.properties support:
 - Usage examples and error handling
 - Configuration and maintenance
 
+### MODULES_UNTOUCHED_INTEGRATION.md
+
+Complete guide to modules-untouched integration:
+
+- Overview of the integration
+- Removal of releases.properties
+- Version resolution strategy
+- Adding new versions
+- Troubleshooting and testing
+
 ### CHANGELOG.md
 
 Complete changelog of all Gradle build updates:
@@ -72,16 +83,18 @@ Complete changelog of all Gradle build updates:
 
 ## Recent Updates
 
-### Remote apache.properties Support
-The Gradle build now supports fetching Apache versions from the remote apache.properties file hosted at:
+### Removal of releases.properties (2025-01-XX)
+The local `releases.properties` file has been **removed**. The Gradle build now fetches all Apache version information directly from the remote apache.properties file hosted at:
 https://github.com/Bearsampp/modules-untouched/blob/main/modules/apache.properties
 
-**Version Resolution Priority:**
-1. Local `releases.properties` file
-2. Remote `apache.properties` from modules-untouched
-3. Direct download from modules-untouched repository (apache{version}/ directory)
+**Version Resolution Strategy:**
+1. Remote `apache.properties` from modules-untouched (PRIMARY)
+2. Direct download from modules-untouched repository (apache{version}/ directory) (FALLBACK)
 
-This ensures that versions not yet added to the local releases.properties can still be built automatically.
+This provides centralized version management consistent with module-bruno and other Bearsampp modules.
+
+### Remote apache.properties Support (2024-11-12)
+The Gradle build supports fetching Apache versions from the remote apache.properties file, eliminating the need for local version management.
 
 ### Documentation Organization
 All Gradle-related documentation has been moved to `/.gradle-docs` to keep the project root clean and organized.
@@ -95,6 +108,7 @@ All Gradle-related documentation has been moved to `/.gradle-docs` to keep the p
 | [Tmp Paths Documentation](GRADLE_TMP_PATHS.md)                   | Build path structure details                                                 |
 | [Tmp Paths Changes](CHANGES_TMP_PATHS.md)                        | Path configuration updates                                                   |
 | [Remote Properties Support](REMOTE_PROPERTIES_SUPPORT.md)        | Remote version discovery documentation                                       |
+| [Modules-Untouched Integration](MODULES_UNTOUCHED_INTEGRATION.md) | Complete integration guide                                                  |
 | [Changelog](CHANGELOG.md)                                        | Complete version history                                                     |
 
 ## Usage

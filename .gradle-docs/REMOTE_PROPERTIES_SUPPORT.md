@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Gradle build system now supports fetching Apache version information from the remote `apache.properties` file hosted in the modules-untouched repository. This allows building Apache versions that are not yet listed in the local `releases.properties` file.
+The Gradle build system fetches Apache version information directly from the remote `apache.properties` file hosted in the modules-untouched repository. The local `releases.properties` file has been **removed** in favor of this centralized, dynamic approach.
 
 ## Remote Properties URL
 
@@ -10,65 +10,65 @@ The Gradle build system now supports fetching Apache version information from th
 https://raw.githubusercontent.com/Bearsampp/modules-untouched/main/modules/apache.properties
 ```
 
-## Version Resolution Priority
+## Version Resolution Strategy
 
-When building an Apache version, the system follows this priority order:
+When building an Apache version, the system follows this resolution order:
 
 | Priority | Source                                    | Description                                                  |
 |----------|-------------------------------------------|--------------------------------------------------------------|
-| 1        | Local `releases.properties`               | Check the local file first                                   |
-| 2        | Remote `apache.properties`                | Fetch from modules-untouched repository                      |
-| 3        | Direct repository download                | Download from `apache{version}/` directory                   |
+| 1        | Remote `apache.properties`                | Fetch from modules-untouched repository (PRIMARY)            |
+| 2        | Direct repository download                | Download from `apache{version}/` directory (FALLBACK)        |
+
+**Note:** The local `releases.properties` file has been removed. All version information is now managed centrally in the modules-untouched repository.
 
 ## How It Works
 
-### Function: loadRemoteApacheProperties()
+### Function: fetchModulesUntouchedProperties()
 
-A new helper function has been added to `build.gradle`:
+The primary helper function in `build.gradle`:
 
 ```groovy
-def loadRemoteApacheProperties() {
-    def remoteUrl = "https://raw.githubusercontent.com/Bearsampp/modules-untouched/main/modules/apache.properties"
-    
+def fetchModulesUntouchedProperties() {
+    def propsUrl = "https://raw.githubusercontent.com/Bearsampp/modules-untouched/main/modules/apache.properties"
+
     try {
-        println "Loading remote apache.properties from modules-untouched..."
-        def connection = new URL(remoteUrl).openConnection()
+        def connection = new URL(propsUrl).openConnection()
         connection.setConnectTimeout(10000)
         connection.setReadTimeout(10000)
-        
-        def remoteProps = new Properties()
+
+        def props = new Properties()
         connection.inputStream.withStream { stream ->
-            remoteProps.load(stream)
+            props.load(stream)
         }
-        
-        println "  Loaded ${remoteProps.size()} versions from remote apache.properties"
-        return remoteProps
+
+        return props
     } catch (Exception e) {
-        println "  Warning: Could not load remote apache.properties: ${e.message}"
-        return new Properties()
+        println "  Warning: Could not fetch modules-untouched apache.properties: ${e.message}"
+        return null
     }
 }
 ```
 
-### Integration with downloadAndExtractApache()
+### Integration with downloadFromModulesUntouched()
 
-The `downloadAndExtractApache()` function has been updated to use the remote properties:
+The `downloadFromModulesUntouched()` function uses the remote properties:
 
 ```groovy
-def downloadUrl = releases.getProperty(version)
-if (!downloadUrl) {
-    // Check remote apache.properties from modules-untouched
-    println "Version ${version} not found in releases.properties"
-    println "Checking remote apache.properties from modules-untouched..."
-    
-    def remoteProps = loadRemoteApacheProperties()
-    downloadUrl = remoteProps.getProperty(version)
-    
+def downloadFromModulesUntouched(String version) {
+    println "Checking modules-untouched repository on GitHub..."
+
+    // First, try to get the URL from apache.properties
+    def untouchedProps = fetchModulesUntouchedProperties()
+    def downloadUrl = untouchedProps?.getProperty(version)
+
     if (downloadUrl) {
-        println "  Found version ${version} in remote apache.properties"
+        println "  Found version ${version} in modules-untouched apache.properties"
         println "  URL: ${downloadUrl}"
+        
+        // Download and extract the archive
+        // ...
     } else {
-        // Fallback to direct repository download
+        // Fallback: Try to detect the archive file by checking common patterns
         // ...
     }
 }
@@ -78,30 +78,35 @@ if (!downloadUrl) {
 
 | Benefit                          | Description                                                                  |
 |----------------------------------|------------------------------------------------------------------------------|
-| Automatic Version Discovery      | No need to manually update `releases.properties` for every new version       |
 | Centralized Version Management   | All versions maintained in one place (modules-untouched)                     |
+| No Local Maintenance             | No need to maintain a local `releases.properties` file                       |
+| Always Up-to-Date                | Automatically uses the latest version information from the repository        |
+| Consistent Across Modules        | Same approach as module-bruno and other Bearsampp modules                    |
 | Fallback Support                 | Multiple fallback mechanisms ensure builds can proceed                       |
 | Network Resilience               | Graceful handling of network errors with clear error messages                |
 
 ## Usage Example
 
-### Building a Version Not in releases.properties
+### Building Any Apache Version
 
 ```bash
-# If version 2.4.66 is in remote apache.properties but not in local releases.properties
+# Build any version available in modules-untouched
 gradle release -PbundleVersion=2.4.66
 ```
 
 **Output:**
 ```
-Version 2.4.66 not found in releases.properties
-Checking remote apache.properties from modules-untouched...
-Loading remote apache.properties from modules-untouched...
-  Loaded 15 versions from remote apache.properties
-  Found version 2.4.66 in remote apache.properties
+Apache binaries not found in bin/ directory
+Checking modules-untouched repository...
+Checking modules-untouched repository on GitHub...
+  Found version 2.4.66 in modules-untouched apache.properties
   URL: https://github.com/Bearsampp/modules-untouched/releases/download/...
-Downloading Apache 2.4.66 from:
-  https://github.com/Bearsampp/modules-untouched/releases/download/...
+  Downloading from modules-untouched: https://...
+  Download complete
+  Extracting archive...
+  Extraction complete
+  Found Apache directory: Apache24
+  Apache 2.4.66 from modules-untouched ready at: ...
 ```
 
 ## Error Handling
@@ -111,23 +116,22 @@ Downloading Apache 2.4.66 from:
 If the remote properties file cannot be loaded (network issues, repository unavailable):
 
 ```
-Warning: Could not load remote apache.properties: Connection timeout
-Version 2.4.66 not found in remote apache.properties
-Checking modules-untouched repository on GitHub...
+Warning: Could not fetch modules-untouched apache.properties: Connection timeout
+Apache 2.4.66 not found in modules-untouched repository
 ```
 
-The system will automatically fall back to checking the direct repository download.
+The system will automatically fall back to checking for direct archive files in the repository.
 
 ### Version Not Found
 
 If a version is not found in any location:
 
 ```
-Version 2.4.66 not found in releases.properties, remote apache.properties, or modules-untouched repository.
+Failed to obtain Apache binaries for version 2.4.66
 
-Please either:
-1. Add the version to releases.properties with a download URL
-2. Add the version to https://github.com/Bearsampp/modules-untouched/blob/main/modules/apache.properties
+You can manually:
+1. Download and extract Apache binaries to: bin/apache2.4.66/Apache24/
+2. Add version 2.4.66 to https://github.com/Bearsampp/modules-untouched/blob/main/modules/apache.properties
 3. Upload Apache binaries to: https://github.com/Bearsampp/modules-untouched/tree/main/apache2.4.66/
 ```
 
@@ -144,7 +148,7 @@ The remote properties loader uses these timeout settings:
 | Connect Timeout                  | 10 seconds                                                                   |
 | Read Timeout                     | 10 seconds                                                                   |
 
-These can be adjusted in the `loadRemoteApacheProperties()` function if needed.
+These can be adjusted in the `fetchModulesUntouchedProperties()` function if needed.
 
 ## Testing
 
@@ -152,45 +156,44 @@ To test the remote properties support:
 
 | Test                             | Steps                                                                        | Expected Result                              |
 |----------------------------------|------------------------------------------------------------------------------|----------------------------------------------|
-| Test with existing version       | `gradle release -PbundleVersion=2.4.62`                                      | Should use local releases.properties         |
-| Test with version only in remote | Remove version from local, build that version                                | Should fetch from remote apache.properties   |
-| Test network error handling      | Disconnect network, build version not in local                               | Should show appropriate error message        |
+| Test with existing version       | `gradle release -PbundleVersion=2.4.62`                                      | Should fetch from remote apache.properties   |
+| Test with new version            | Build a version recently added to remote                                     | Should fetch from remote apache.properties   |
+| Test network error handling      | Disconnect network, build version                                            | Should show appropriate error message        |
+| Test fallback mechanism          | Build version not in apache.properties                                       | Should try direct archive detection          |
 
 ## Maintenance
 
 ### Adding New Versions
 
-To add a new Apache version:
+To add a new Apache version, use one of these methods:
 
 | Option | Method                                    | Steps                                                        | Scope        |
 |--------|-------------------------------------------|--------------------------------------------------------------|--------------|
 | 1      | Add to remote apache.properties (Recommended) | Edit `modules/apache.properties`, add version, commit    | All builds   |
-| 2      | Add to local releases.properties          | Edit local file, add version line                            | Local only   |
-| 3      | Upload to modules-untouched repository    | Create `apache2.4.XX/` directory, upload binaries            | All builds   |
+| 2      | Upload to modules-untouched repository    | Create `apache2.4.XX/` directory, upload binaries            | All builds   |
 
 **Option 1 Details (Recommended):**
 1. Edit `modules/apache.properties` in modules-untouched repository
 2. Add line: `2.4.XX = https://download-url-here`
 3. Commit and push
-4. Version is now available to all builds
+4. Version is now immediately available to all builds
 
 **Option 2 Details:**
-1. Edit local `releases.properties`
-2. Add line: `2.4.XX = https://download-url-here`
-3. Version is available for local builds only
+1. Create directory: `apache2.4.XX/` in modules-untouched repository
+2. Upload Apache binaries (as .7z or .zip archive)
+3. Version can be auto-discovered by the build system
 
-**Option 3 Details:**
-1. Create directory: `apache2.4.XX/`
-2. Upload Apache binaries
-3. Version can be auto-discovered
+**Note:** The local `releases.properties` file has been removed. All version management is now centralized in the modules-untouched repository.
 
 ## Related Files
 
 | File/Resource                    | Description                                                                  |
 |----------------------------------|------------------------------------------------------------------------------|
 | `build.gradle`                   | Contains the implementation                                                  |
-| `releases.properties`            | Local version definitions                                                    |
 | Remote apache.properties         | https://github.com/Bearsampp/modules-untouched/blob/main/modules/apache.properties |
+| modules-untouched repository     | https://github.com/Bearsampp/modules-untouched                               |
+
+**Note:** The `releases.properties` file has been removed as of the latest update.
 
 ## See Also
 

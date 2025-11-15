@@ -29,14 +29,16 @@ Complete index of all Gradle build documentation for module-apache.
 | [GRADLE_TMP_PATHS.md](GRADLE_TMP_PATHS.md) | Build path structure details       | ~350  | 8      |
 | [CHANGES_TMP_PATHS.md](CHANGES_TMP_PATHS.md) | Temporary paths update details   | ~250  | 6      |
 | [REMOTE_PROPERTIES_SUPPORT.md](REMOTE_PROPERTIES_SUPPORT.md) | Remote version discovery | ~400  | 10     |
+| [MODULES_UNTOUCHED_INTEGRATION.md](MODULES_UNTOUCHED_INTEGRATION.md) | Complete integration guide | ~600  | 15     |
 
 ### Project Documentation
 
 | Document                         | Description                                  | Lines | Tables |
 |----------------------------------|----------------------------------------------|-------|--------|
-| [CHANGELOG.md](CHANGELOG.md)     | Complete version history                     | ~200  | 8      |
+| [CHANGELOG.md](CHANGELOG.md)     | Complete version history                     | ~250  | 10     |
 | [GRADLE_CONVERSION_COMPLETE.md](GRADLE_CONVERSION_COMPLETE.md) | Conversion summary | ~600  | 20     |
 | [CONVERSION_SUMMARY.md](CONVERSION_SUMMARY.md) | Task completion status         | ~500  | 18     |
+| [MODULES_UNTOUCHED_INTEGRATION.md](MODULES_UNTOUCHED_INTEGRATION.md) | Integration guide | ~600  | 15     |
 | [INDEX.md](INDEX.md)             | This document                                | ~150  | 6      |
 
 ## Documentation by Topic
@@ -55,9 +57,10 @@ Complete index of all Gradle build documentation for module-apache.
 
 ### Version Management
 
-1. [REMOTE_PROPERTIES_SUPPORT.md](REMOTE_PROPERTIES_SUPPORT.md) - Remote version discovery
-2. [GRADLE_UPDATES.md](GRADLE_UPDATES.md) - Version management section
-3. [CHANGES_SUMMARY.md](CHANGES_SUMMARY.md) - Version detection changes
+1. [MODULES_UNTOUCHED_INTEGRATION.md](MODULES_UNTOUCHED_INTEGRATION.md) - Complete integration guide
+2. [REMOTE_PROPERTIES_SUPPORT.md](REMOTE_PROPERTIES_SUPPORT.md) - Remote version discovery
+3. [GRADLE_UPDATES.md](GRADLE_UPDATES.md) - Version management section
+4. [CHANGES_SUMMARY.md](CHANGES_SUMMARY.md) - Version detection changes
 
 ### Project History
 
@@ -72,18 +75,18 @@ Complete index of all Gradle build documentation for module-apache.
 
 | Metric                           | Count  | Details                                                      |
 |----------------------------------|--------|--------------------------------------------------------------|
-| Total documentation files        | 10     | In .gradle-docs directory                                    |
-| Total lines of documentation     | ~3500  | Comprehensive coverage                                       |
-| Total tables                     | 106    | All properly aligned                                         |
-| Code examples                    | 40+    | Throughout all documents                                     |
-| Cross-references                 | 50+    | All documents properly linked                                |
+| Total documentation files        | 11     | In .gradle-docs directory                                    |
+| Total lines of documentation     | ~4100  | Comprehensive coverage                                       |
+| Total tables                     | 121    | All properly aligned                                         |
+| Code examples                    | 45+    | Throughout all documents                                     |
+| Cross-references                 | 60+    | All documents properly linked                                |
 
 ### By Category
 
 | Category                         | Files  | Lines  | Tables | Purpose                                      |
 |----------------------------------|--------|--------|--------|----------------------------------------------|
 | User Documentation               | 2      | ~350   | 8      | Quick reference and getting started          |
-| Technical Documentation          | 5      | ~1700  | 46     | Detailed build system documentation          |
+| Technical Documentation          | 6      | ~2300  | 61     | Detailed build system documentation          |
 | Project Documentation            | 4      | ~1450  | 52     | History, changes, and completion status      |
 
 ## Document Relationships
@@ -99,6 +102,7 @@ README.md (Index)
 ├── GRADLE_TMP_PATHS.md (Path Structure)
 │   └── CHANGES_TMP_PATHS.md (Path Changes)
 ├── REMOTE_PROPERTIES_SUPPORT.md (Remote Discovery)
+├── MODULES_UNTOUCHED_INTEGRATION.md (Integration Guide)
 ├── CHANGES_SUMMARY.md (Changes Overview)
 ├── CHANGELOG.md (Version History)
 ├── GRADLE_CONVERSION_COMPLETE.md (Completion Summary)
@@ -119,7 +123,8 @@ README.md (Index)
 1. Overview: [GRADLE_UPDATES.md](GRADLE_UPDATES.md)
 2. Changes: [CHANGES_SUMMARY.md](CHANGES_SUMMARY.md)
 3. Paths: [GRADLE_TMP_PATHS.md](GRADLE_TMP_PATHS.md)
-4. Remote: [REMOTE_PROPERTIES_SUPPORT.md](REMOTE_PROPERTIES_SUPPORT.md)
+4. Integration: [MODULES_UNTOUCHED_INTEGRATION.md](MODULES_UNTOUCHED_INTEGRATION.md)
+5. Remote: [REMOTE_PROPERTIES_SUPPORT.md](REMOTE_PROPERTIES_SUPPORT.md)
 
 ### For Project Managers
 
