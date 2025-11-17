@@ -50,21 +50,22 @@ gradle verify
 gradle clean
 ```
 
-**For detailed build instructions, see [GRADLE_BUILD.md](GRADLE_BUILD.md)**
-
 ## Documentation
 
-All Gradle build documentation is located in the `/.gradle-docs` directory:
+**For detailed build instructions and documentation, see [.gradle-docs/README.md](.gradle-docs/README.md)**
+
+Additional documentation:
 
 | Document                                                          | Description                                    |
 |-------------------------------------------------------------------|------------------------------------------------|
-| [README.md](.gradle-docs/README.md)                               | Documentation index and quick reference        |
-| [GRADLE_UPDATES.md](.gradle-docs/GRADLE_UPDATES.md)              | Complete build system documentation            |
-| [CHANGES_SUMMARY.md](.gradle-docs/CHANGES_SUMMARY.md)            | Summary of all changes and updates             |
-| [GRADLE_TMP_PATHS.md](.gradle-docs/GRADLE_TMP_PATHS.md)          | Build path structure and configuration         |
-| [CHANGES_TMP_PATHS.md](.gradle-docs/CHANGES_TMP_PATHS.md)        | Temporary paths update details                 |
-| [REMOTE_PROPERTIES_SUPPORT.md](.gradle-docs/REMOTE_PROPERTIES_SUPPORT.md) | Remote version discovery documentation |
-| [CHANGELOG.md](.gradle-docs/CHANGELOG.md)                         | Complete changelog of all updates              |
+| [README.md](.gradle-docs/README.md)                               | Complete build documentation and guide         |
+| [GRADLE_UPDATES.md](.gradle-docs/GRADLE_UPDATES.md)              | Detailed build system updates                  |
+| [CHANGES_SUMMARY.md](.gradle-docs/CHANGES_SUMMARY.md)            | Summary of all changes                         |
+| [GRADLE_TMP_PATHS.md](.gradle-docs/GRADLE_TMP_PATHS.md)          | Build path structure details                   |
+| [CHANGES_TMP_PATHS.md](.gradle-docs/CHANGES_TMP_PATHS.md)        | Temporary paths configuration                  |
+| [REMOTE_PROPERTIES_SUPPORT.md](.gradle-docs/REMOTE_PROPERTIES_SUPPORT.md) | Remote version discovery      |
+| [MODULES_UNTOUCHED_INTEGRATION.md](.gradle-docs/MODULES_UNTOUCHED_INTEGRATION.md) | Integration guide     |
+| [CHANGELOG.md](.gradle-docs/CHANGELOG.md)                         | Complete changelog                             |
 
 ## Configuration
 
@@ -78,6 +79,13 @@ bundle.release = 2025.8.15
 bundle.type    = bins
 bundle.format  = 7z
 ```
+
+| Property          | Description                          | Example Value  |
+|-------------------|--------------------------------------|----------------|
+| `bundle.name`     | Name of the bundle                   | `apache`       |
+| `bundle.release`  | Release version                      | `2025.8.15`    |
+| `bundle.type`     | Type of bundle                       | `bins`         |
+| `bundle.format`   | Archive format (7z or zip)           | `7z`           |
 
 ### Build Path Configuration
 
@@ -102,38 +110,60 @@ You can configure the build output path in three ways (priority order):
 Versions are detected from:
 - `bin/` - Current/active versions
 - `bin/archived/` - Archived/older versions
+- `modules-untouched` - Remote repository (automatic discovery)
 
-### Version Resolution
+### Version Resolution Strategy
 
 When building, the system checks for Apache binaries in this order:
 
-1. Local `bin/` directory
-2. Local `releases.properties` file
-3. Remote `apache.properties` from modules-untouched repository
-4. Direct download from modules-untouched repository
+1. **Local `bin/` directory** - Check for version folder
+2. **Local `bin/archived/` directory** - Check archived versions
+3. **Remote `apache.properties`** - Fetch from modules-untouched repository
+4. **Direct repository download** - Download from modules-untouched GitHub
 
-This ensures maximum flexibility and automatic version discovery.
+This multi-tier fallback strategy ensures maximum flexibility and automatic version discovery without manual configuration.
+
+**Example:**
+```bash
+# List local versions
+gradle listVersions
+
+# List remote versions
+gradle listReleases
+
+# Check integration
+gradle checkModulesUntouched
+```
 
 ## Output Structure
 
-Build artifacts are created in:
+Build artifacts are created in the `bearsampp-build` directory:
 
 ```
 bearsampp-build/
-├── bins/
-│   └── apache/
-│       └── {release}/
-│           ├── bearsampp-apache-{version}-{release}.7z
-│           ├── bearsampp-apache-{version}-{release}.7z.md5
-│           ├── bearsampp-apache-{version}-{release}.7z.sha1
-│           ├── bearsampp-apache-{version}-{release}.7z.sha256
-│           └── bearsampp-apache-{version}-{release}.7z.sha512
-└── tmp/
-    ├── bundles_build/bins/apache/
-    ├── bundles_prep/bins/apache/
-    ├── bundles_src/
-    ├── downloads/apache/
-    └── extract/apache/
+├── bins/apache/{release}/                  # Final packaged archives
+│   ├── bearsampp-apache-{version}-{release}.7z
+│   ├── bearsampp-apache-{version}-{release}.7z.md5
+│   ├── bearsampp-apache-{version}-{release}.7z.sha1
+│   ├── bearsampp-apache-{version}-{release}.7z.sha256
+│   └── bearsampp-apache-{version}-{release}.7z.sha512
+└── tmp/                                    # Temporary build files
+    ├── bundles_prep/bins/apache/           # Prepared bundles
+    ├── bundles_build/bins/apache/          # Build staging
+    ├── bundles_src/                        # Source bundles
+    ├── downloads/apache/                   # Downloaded dependencies
+    └── extract/apache/                     # Extracted archives
+```
+
+**Archive Structure:**
+Each archive contains the Apache version folder at the root:
+```
+bearsampp-apache-2.4.62-2025.8.15.7z
+└── apache2.4.62/              ← Version folder at root
+    ├── bin/
+    ├── conf/
+    ├── modules/
+    └── ...
 ```
 
 ## Features
@@ -146,7 +176,7 @@ Run `gradle release` without parameters for interactive version selection:
 gradle release
 ```
 
-The system will display all available versions and prompt you to select one.
+The system will display all available versions with location tags `[bin]` or `[bin/archived]` and prompt you to select one.
 
 ### Batch Building
 
@@ -156,15 +186,27 @@ Build all available versions at once:
 gradle releaseAll
 ```
 
+This will iterate through all versions in `bin/` and `bin/archived/` directories and build each one.
+
 ### Remote Version Discovery
 
-The build system automatically discovers new Apache versions from the modules-untouched repository, eliminating the need to manually update `releases.properties` for every new version.
+The build system automatically discovers new Apache versions from the modules-untouched repository:
 
-## Module Downloads
+- Fetches version information from `apache.properties`
+- Downloads binaries automatically when not found locally
+- No manual configuration required for new versions
+- Fallback to direct repository access if needed
+
+**Check integration:**
+```bash
+gradle checkModulesUntouched
+```
+
+## Downloads
 
 Official module downloads are available at:
 
-https://bearsampp.com/module/apache
+**https://bearsampp.com/module/apache**
 
 ## Issues
 
