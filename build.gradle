@@ -777,14 +777,108 @@ tasks.register('release') {
                 def versionMatch = (moduleUrl =~ /apache-.*-.*-(.*)/)
                 def moduleVersion = versionMatch ? versionMatch[0][1] : 'unknown'
 
-                // Download module (simulated - in real implementation would download)
-                // For now, we'll just document what would happen
                 println "    URL: ${moduleUrl}"
                 println "    Version: ${moduleVersion}"
 
+                // Download and extract module
+                try {
+                    def moduleDownloadDir = file("${bundleTmpDownloadPath}/modules")
+                    moduleDownloadDir.mkdirs()
+
+                    // Determine filename from URL
+                    def filename = moduleUrl.substring(moduleUrl.lastIndexOf('/') + 1)
+                    def downloadedModuleFile = file("${moduleDownloadDir}/${filename}")
+
+                    // Download the module if not already cached
+                    if (!downloadedModuleFile.exists()) {
+                        println "    Downloading module..."
+                        new URL(moduleUrl).withInputStream { input ->
+                            downloadedModuleFile.withOutputStream { output ->
+                                output << input
+                            }
+                        }
+                        println "    Download complete"
+                    } else {
+                        println "    Using cached module file"
+                    }
+
+                    // Extract module to Apache modules directory
+                    def modulesDir = file("${apachePrepPath}/modules")
+                    modulesDir.mkdirs()
+
+                    println "    Extracting module .so file..."
+                    if (filename.endsWith('.zip')) {
+                        // Extract only .so files from the zip
+                        copy {
+                            from(zipTree(downloadedModuleFile)) {
+                                include '**/*.so'
+                            }
+                            into modulesDir
+                            eachFile { fcd ->
+                                // Flatten the directory structure - put .so files directly in modules/
+                                fcd.relativePath = new RelativePath(true, fcd.name)
+                            }
+                            includeEmptyDirs = false
+                        }
+                        println "    Module .so file extracted successfully"
+                    } else if (filename.endsWith('.7z')) {
+                        def sevenZipPath = find7ZipExecutable()
+                        if (sevenZipPath) {
+                            // Extract to temp directory first
+                            def tempExtractDir = file("${bundleTmpDownloadPath}/modules/temp_${moduleName}")
+                            if (tempExtractDir.exists()) {
+                                delete tempExtractDir
+                            }
+                            tempExtractDir.mkdirs()
+
+                            def command = [
+                                sevenZipPath.toString(),
+                                'x',
+                                downloadedModuleFile.absolutePath.toString(),
+                                "-o${tempExtractDir.absolutePath}".toString(),
+                                '-y'
+                            ]
+                            def process = new ProcessBuilder(command as String[])
+                                .directory(tempExtractDir)
+                                .redirectErrorStream(true)
+                                .start()
+
+                            process.inputStream.eachLine { line ->
+                                if (line.trim()) println "      ${line}"
+                            }
+
+                            def exitCode = process.waitFor()
+                            if (exitCode == 0) {
+                                // Find and copy only .so files
+                                def soFiles = fileTree(tempExtractDir) {
+                                    include '**/*.so'
+                                }
+                                soFiles.each { soFile ->
+                                    copy {
+                                        from soFile
+                                        into modulesDir
+                                    }
+                                    println "    Copied ${soFile.name} to modules directory"
+                                }
+                                // Clean up temp directory
+                                delete tempExtractDir
+                                println "    Module .so file extracted successfully"
+                            } else {
+                                println "    Warning: Module extraction failed"
+                            }
+                        } else {
+                            println "    Warning: 7-Zip not found, cannot extract .7z module"
+                        }
+                    }
+
+                } catch (Exception e) {
+                    println "    Warning: Failed to download/extract module: ${e.message}"
+                }
+
                 // Add to modules content for httpd.conf injection
-                modulesContent.append("#LoadModule ${moduleName}_module modules/mod_${moduleName}.so\n")
+                modulesContent.append("LoadModule ${moduleName}_module modules/mod_${moduleName}.so\n")
             }
+
 
             // Inject modules into httpd.conf
             def httpdConf = file("${bundlePath}/conf/httpd.conf")
@@ -1049,8 +1143,103 @@ tasks.register('releaseAll') {
                         println "    URL: ${moduleUrl}"
                         println "    Version: ${moduleVersion}"
 
+                        // Download and extract module
+                        try {
+                            def moduleDownloadDir = file("${bundleTmpDownloadPath}/modules")
+                            moduleDownloadDir.mkdirs()
+
+                            // Determine filename from URL
+                            def filename = moduleUrl.substring(moduleUrl.lastIndexOf('/') + 1)
+                            def downloadedModuleFile = file("${moduleDownloadDir}/${filename}")
+
+                            // Download the module if not already cached
+                            if (!downloadedModuleFile.exists()) {
+                                println "    Downloading module..."
+                                new URL(moduleUrl).withInputStream { input ->
+                                    downloadedModuleFile.withOutputStream { output ->
+                                        output << input
+                                    }
+                                }
+                                println "    Download complete"
+                            } else {
+                                println "    Using cached module file"
+                            }
+
+                            // Extract module to Apache modules directory
+                            def modulesDir = file("${apachePrepPath}/modules")
+                            modulesDir.mkdirs()
+
+                            println "    Extracting module .so file..."
+                            if (filename.endsWith('.zip')) {
+                                // Extract only .so files from the zip
+                                copy {
+                                    from(zipTree(downloadedModuleFile)) {
+                                        include '**/*.so'
+                                    }
+                                    into modulesDir
+                                    eachFile { fcd ->
+                                        // Flatten the directory structure - put .so files directly in modules/
+                                        fcd.relativePath = new RelativePath(true, fcd.name)
+                                    }
+                                    includeEmptyDirs = false
+                                }
+                                println "    Module .so file extracted successfully"
+                            } else if (filename.endsWith('.7z')) {
+                                def sevenZipPath = find7ZipExecutable()
+                                if (sevenZipPath) {
+                                    // Extract to temp directory first
+                                    def tempExtractDir = file("${bundleTmpDownloadPath}/modules/temp_${moduleName}")
+                                    if (tempExtractDir.exists()) {
+                                        delete tempExtractDir
+                                    }
+                                    tempExtractDir.mkdirs()
+
+                                    def command = [
+                                        sevenZipPath.toString(),
+                                        'x',
+                                        downloadedModuleFile.absolutePath.toString(),
+                                        "-o${tempExtractDir.absolutePath}".toString(),
+                                        '-y'
+                                    ]
+                                    def process = new ProcessBuilder(command as String[])
+                                        .directory(tempExtractDir)
+                                        .redirectErrorStream(true)
+                                        .start()
+
+                                    process.inputStream.eachLine { line ->
+                                        if (line.trim()) println "      ${line}"
+                                    }
+
+                                    def exitCode = process.waitFor()
+                                    if (exitCode == 0) {
+                                        // Find and copy only .so files
+                                        def soFiles = fileTree(tempExtractDir) {
+                                            include '**/*.so'
+                                        }
+                                        soFiles.each { soFile ->
+                                            copy {
+                                                from soFile
+                                                into modulesDir
+                                            }
+                                            println "    Copied ${soFile.name} to modules directory"
+                                        }
+                                        // Clean up temp directory
+                                        delete tempExtractDir
+                                        println "    Module .so file extracted successfully"
+                                    } else {
+                                        println "    Warning: Module extraction failed"
+                                    }
+                                } else {
+                                    println "    Warning: 7-Zip not found, cannot extract .7z module"
+                                }
+                            }
+
+                        } catch (Exception e) {
+                            println "    Warning: Failed to download/extract module: ${e.message}"
+                        }
+
                         // Add to modules content for httpd.conf injection
-                        modulesContent.append("#LoadModule ${moduleName}_module modules/mod_${moduleName}.so\n")
+                        modulesContent.append("LoadModule ${moduleName}_module modules/mod_${moduleName}.so\n")
                     }
 
                     // Inject modules into httpd.conf
