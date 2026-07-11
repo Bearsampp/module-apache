@@ -7,11 +7,6 @@ on:
   release:
     types: [published, prereleased, edited]
 
-  pull_request:
-    types: [closed]
-    branches:
-      - 'main'
-
   # Manual trigger for testing
   workflow_dispatch:
     inputs:
