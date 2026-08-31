@@ -344,66 +344,59 @@ def fetchModulesUntouchedProperties() {
     }
 }
 
-// Helper: Download Apache binaries (check releases.properties first, then modules-untouched)
+// Helper: Download Apache binaries (always prefer modules-untouched first, fall back to releases.properties)
 def downloadFromModulesUntouched(String version, File destDir) {
     def downloadUrl = null
     def source = null
     def matchedVersion = null
 
-    // Step 1: Check local releases.properties FIRST
-    def releasesPropsFile = file('releases.properties')
-    if (releasesPropsFile.exists()) {
-        try {
-            def releasesProps = new Properties()
-            releasesPropsFile.withInputStream { stream ->
-                releasesProps.load(stream)
-            }
-            downloadUrl = releasesProps.getProperty(version)
-            if (downloadUrl) {
-                source = "releases.properties"
-                matchedVersion = version
-                println "Found ${version} in releases.properties"
-            }
-        } catch (Exception e) {
-            println "Could not read releases.properties: ${e.message}"
-        }
-    }
+    // Step 1: Check modules-untouched FIRST (remote, always up-to-date)
+    def untouchedProps = fetchModulesUntouchedProperties()
 
-    // Step 2: Fall back to modules-untouched if not found locally
-    if (!downloadUrl) {
-        def untouchedProps = fetchModulesUntouchedProperties()
-
-        if (untouchedProps) {
-            // Try exact match first
-            downloadUrl = untouchedProps.getProperty(version)
-            if (downloadUrl) {
-                source = "modules-untouched"
-                matchedVersion = version
-                println "Found ${version} in modules-untouched"
-            } else {
-                // Fallback: find a key that starts with the version (e.g., 2.4.68-260617 matches 2.4.68)
-                def foundKey = untouchedProps.keys().find { key ->
-                    key.toString().startsWith("${version}-")
-                }
-                if (foundKey) {
-                    downloadUrl = untouchedProps.getProperty(foundKey)
-                    source = "modules-untouched"
-                    matchedVersion = foundKey
-                    println "Found ${foundKey} in modules-untouched (using for ${version})"
-                }
-            }
-
-            if (!downloadUrl) {
-                println "[ERROR] Version ${version} not found in releases.properties or modules-untouched"
-                return null
-            }
+    if (untouchedProps) {
+        // Try exact match first
+        downloadUrl = untouchedProps.getProperty(version)
+        if (downloadUrl) {
+            source = "modules-untouched"
+            matchedVersion = version
+            println "Found ${version} in modules-untouched"
         } else {
-            println "[ERROR] Version ${version} not found in releases.properties or modules-untouched"
-            return null
+            // Fallback: find a key that starts with the version (e.g., 2.4.68-260617 matches 2.4.68)
+            def foundKey = untouchedProps.keys().find { key ->
+                key.toString().startsWith("${version}-")
+            }
+            if (foundKey) {
+                downloadUrl = untouchedProps.getProperty(foundKey)
+                source = "modules-untouched"
+                matchedVersion = foundKey
+                println "Found ${foundKey} in modules-untouched (using for ${version})"
+            }
+        }
+    }
+
+    // Step 2: Fall back to local releases.properties if not found in modules-untouched
+    if (!downloadUrl) {
+        def releasesPropsFile = file('releases.properties')
+        if (releasesPropsFile.exists()) {
+            try {
+                def releasesProps = new Properties()
+                releasesPropsFile.withInputStream { stream ->
+                    releasesProps.load(stream)
+                }
+                downloadUrl = releasesProps.getProperty(version)
+                if (downloadUrl) {
+                    source = "releases.properties"
+                    matchedVersion = version
+                    println "Found ${version} in releases.properties"
+                }
+            } catch (Exception e) {
+                println "Could not read releases.properties: ${e.message}"
+            }
         }
     }
 
     if (!downloadUrl) {
+        println "[ERROR] Version ${version} not found in modules-untouched or releases.properties"
         return null
     }
 
@@ -443,7 +436,7 @@ def downloadAndExtractApache(String version, File destDir) {
         return null
     }
 
-    // Extract the archive
+    // Extract the archive (zip via Gradle, 7z via 7-Zip)
     def extractDir = file(bundleTmpExtractPath)
     extractDir.mkdirs()
     println "  Extracting archive..."
@@ -453,11 +446,7 @@ def downloadAndExtractApache(String version, File destDir) {
     }
     extractPath.mkdirs()
 
-    // Extract using Gradle's zipTree (Apache binaries are typically .zip)
-    copy {
-        from zipTree(downloadedFile)
-        into extractPath
-    }
+    extractArchive(downloadedFile, extractPath)
 
     // Find the Apache directory (it might be nested)
     def apacheDir = findApacheDirectory(extractPath)
@@ -959,13 +948,7 @@ tasks.register('packageRelease') {
             include 'bearsampp.conf'
             include 'conf/**'
             exclude 'conf/original/**'
-            exclude 'conf/**/*.conf'
-            // Rename .ber files to standard names
-            eachFile { fileCopyDetails ->
-                if (fileCopyDetails.name.endsWith('.ber')) {
-                    fileCopyDetails.name = fileCopyDetails.name.replaceAll(/\.ber$/, '')
-                }
-            }
+            exclude 'conf/ssl/**'
         }
 
         // Copy additional configuration files from repo if they exist
