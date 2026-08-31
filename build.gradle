@@ -563,19 +563,29 @@ def processModules(File modulesFile, File apachePrepPath) {
         modulesConfPath.text = modulesConfContent.toString()
         println "  Created: conf/extra/modules.conf"
 
-        // Update httpd.conf to include modules.conf if not already included
-        def httpdConfPath = new File(apachePrepPath, 'conf/httpd.conf')
-        if (httpdConfPath.exists()) {
-            def httpdContent = httpdConfPath.text
-            def includeModulesConf = "Include conf/extra/modules.conf"
-            if (!httpdContent.contains('conf/extra/modules.conf')) {
-                // Add include at the end of DSO section, before supplemental configuration
-                httpdContent = httpdContent.replaceAll(
-                    /(?m)(^# Supplemental configuration)/,
-                    "${includeModulesConf}\n\n\$1"
-                )
-                httpdConfPath.text = httpdContent
-                println "  Updated: conf/httpd.conf (added modules.conf include)"
+        // Update httpd.conf (and its .ber template) to include modules.conf and substitute
+        // the @APACHE_MODULES@ build-template placeholder with the real LoadModule
+        // directive(s) (same source that backs conf/extra/modules.conf), otherwise
+        // httpd -t fails with "Invalid command '@APACHE_MODULES@'".
+        def modulesLoadText = moduleLoadLines.join('\n')
+        def includeModulesConf = "Include conf/extra/modules.conf"
+        [ 'conf/httpd.conf', 'conf/httpd.conf.ber' ].each { relConf ->
+            def confPath = new File(apachePrepPath, relConf)
+            if (confPath.exists()) {
+                def confContent = confPath.text
+                if (!confContent.contains('conf/extra/modules.conf')) {
+                    // Add include at the end of DSO section, before supplemental configuration
+                    confContent = confContent.replaceAll(
+                        /(?m)(^# Supplemental configuration)/,
+                        "${includeModulesConf}\n\n\$1"
+                    )
+                    println "  Updated: ${relConf} (added modules.conf include)"
+                }
+                if (confContent.contains('@APACHE_MODULES@')) {
+                    confContent = confContent.replace('@APACHE_MODULES@', modulesLoadText ?: '')
+                    println "  Updated: ${relConf} (substituted @APACHE_MODULES@ placeholder)"
+                }
+                confPath.text = confContent
             }
         }
     }
